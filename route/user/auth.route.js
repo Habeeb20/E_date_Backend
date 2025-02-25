@@ -53,10 +53,6 @@ authRouter.post("/register", async (req, res) => {
             return res.status(400).json({ status: false, error: "Email already exists" });
         }
 
-        if (phoneNumber.length < 11) {
-            return res.status(400).json({ status: false, error: "Phone number should be at least 11 digits" });
-        }
-
         if (confirmPassword !== password) {
             return res.status(400).json({ status: false, error: "Confirm password does not match password" });
         }
@@ -85,7 +81,7 @@ authRouter.post("/register", async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ status: false, error: "An error occurred on the server" });
+        return res.status(500).json({ status: false, error: error.message });
     }
 });
 
@@ -121,7 +117,7 @@ authRouter.post("/login", async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ status: false, error: "An error occurred on the server" });
+        return res.status(500).json({ status: false, error: error.message });
     }
 });
 
@@ -136,7 +132,7 @@ authRouter.get("/dashboard", verifyToken, async (req, res) => {
         return res.status(200).json({ status: true, message: "Dashboard data retrieved", user });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ status: false, error: "An error occurred on the server" });
+        return res.status(500).json({ status: false, error: error.message });
     }
 });
 
