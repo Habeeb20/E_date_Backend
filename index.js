@@ -8,6 +8,8 @@ import multer from "multer";
 import bodyParser from "body-parser";
 import authRouter from "./route/user/auth.route.js";
 
+import profilerouter from "./route/user/profile.route.js";
+
 
 
 dotenv.config();
@@ -32,6 +34,7 @@ const PORT =2000
 
 
 app.use("/api/v1", authRouter)
+app.use("/api/v1", profilerouter)
 
 
 

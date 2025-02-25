@@ -32,4 +32,4 @@ const authSchema  = new mongoose.Schema({
 }, {timestamps: true })
 
 
-export default mongoose.model("Auth", authSchema)
+export default mongoose.model("User", authSchema)
