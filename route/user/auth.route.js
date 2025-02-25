@@ -22,7 +22,7 @@ const transporter = nodemailer.createTransport(({
     service:'gmail',
     auth: {
        user:"essentialng23@gmail.com",
-        pass:"clepxviuvbxqbedp"
+        pass:"jvrbtnuvubsdwtwu"
       },
 }));
 
@@ -142,8 +142,9 @@ authRouter.get("/dashboard", verifyToken, async (req, res) => {
 
 
 
-authRouter.post("/verify-email", async (req, res) => {
-    const { email, code } = req.body;  
+authRouter.post("/verify-email/:email", async (req, res) => {
+    const { email } = req.params;  
+    const { code } = req.body;     
 
     try {
         const user = await Auth.findOne({
