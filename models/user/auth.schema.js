@@ -20,10 +20,7 @@ const authSchema  = new mongoose.Schema({
         type:String,
         required: String
     },
-    confirmPassword: {
-        type:String,
-        required: true
-    },
+  
     isVerified: {type: Boolean,default: false},
     status: { type: String, enum: ['active', 'blocked', 'pending'], default: 'pending' },
     createdAt: { type: Date, default: Date.now },
