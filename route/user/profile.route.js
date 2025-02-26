@@ -6,46 +6,45 @@ import bcrypt from "bcrypt"
 
 const profilerouter = express.Router()
 
-profilerouter.post("/createprofile", verifyToken, async (req, res) => {
+profilerouter.post("/createprofile", async (req, res) => {
     try {
-        const { firstName, lastName, dateOfBirth, gender, maritalStatus, interest, Nationality, ProfilePicture, skinColor, EyeColor } = req.body;
-        const userId = req.user.id;
+        const { email, firstName, lastName, dateOfBirth, gender, maritalStatus, interest, Nationality, ProfilePicture, skinColor, EyeColor } = req.body;
 
-   
-        const existingProfile = await Profile.findOne({ userId });
-        if (existingProfile) {
-            return res.status(400).json({ message: "Profile already exists for this user" });
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
         }
 
-        if (!firstName || !lastName || !dateOfBirth || !gender || !maritalStatus  || !Nationality) {
-            return res.status(400).json({ message: "All required fields must be filled" });
-        }
-
-     
-        if (!Array.isArray(interest) || interest.length === 0) {
-            return res.status(400).json({ message: "Interest must be a non-empty array" });
-        }
-
-  
-        if (!interest.every(item => typeof item === 'string' && item.trim().length > 0)) {
-            return res.status(400).json({ message: "All interests must be non-empty strings" });
-        }
-
-        // Ensure the user exists
-        const user = await User.findById(userId);
+        const user = await User.findOne({ email });
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Create new profile
+        const existingProfile = await Profile.findOne({ userId: email });
+        if (existingProfile) {
+            return res.status(400).json({ message: "Profile already exists for this user" });
+        }
+
+        if (!firstName || !lastName || !dateOfBirth || !gender || !maritalStatus || !Nationality) {
+            return res.status(400).json({ message: "All required fields must be filled" });
+        }
+
+        if (!Array.isArray(interest) || interest.length === 0) {
+            return res.status(400).json({ message: "Interest must be a non-empty array" });
+        }
+
+        if (!interest.every(item => typeof item === "string" && item.trim().length > 0)) {
+            return res.status(400).json({ message: "All interests must be non-empty strings" });
+        }
+
+    
         const newProfile = new Profile({
-            userId,
+            userEmail: email, 
             firstName,
             lastName,
             dateOfBirth,
             gender,
             maritalStatus,
-            interest, 
+            interest,
             Nationality,
             ProfilePicture,
             skinColor,
@@ -54,16 +53,15 @@ profilerouter.post("/createprofile", verifyToken, async (req, res) => {
 
         await newProfile.save();
 
-        res.status(201).json({
+        return res.status(201).json({
             message: "Profile created successfully",
             profile: newProfile,
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: error.message });
     }
 });
-
 profilerouter.put("/editprofile", verifyToken, async(req, res) => {
     try {
         const userId = req.user.id; 

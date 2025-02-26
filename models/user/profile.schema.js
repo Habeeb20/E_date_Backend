@@ -1,10 +1,16 @@
 import mongoose from "mongoose";
 import slugify from "slugify";
 const profileSchema = new mongoose.Schema({
-    userId: {
+    userId:{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: 'User',
+    },
+    userEmail: {
+        type: String,
         required: true,
+        unique: true,
+        trim: true,
+    
       },
     firstName:{
         type:String,
@@ -15,7 +21,7 @@ const profileSchema = new mongoose.Schema({
         required: true
     },
     dateOfBirth:{
-        type:String,
+        type:Date,
         required: true
     },
     gender:{
@@ -45,7 +51,7 @@ const profileSchema = new mongoose.Schema({
 
 profileSchema.pre("save", function(next){
     if(!this.slug){
-      this.slug = slugify(this.fName, { lower: true, strict: true });
+      this.slug = slugify(this.firstName, { lower: true, strict: true });
     }
     next();
   })
