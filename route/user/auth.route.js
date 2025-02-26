@@ -37,7 +37,8 @@ const sendOTPEmail = async(email, otp) => {
 
     };
     try {
-        await transporter.sendMail(mailOptions);
+        const sentMail = await transporter.sendMail(mailOptions);
+        console.log(sentMail)
         return true
     } catch (error) {
         console.log(error)
@@ -81,7 +82,8 @@ authRouter.post("/register", async (req, res) => {
         });
 
         await user.save();
-        const response = await sendOTPEmail(user.email, verificationToken);
+        const response = await sendOTPEmail(user.email, verificationToken)
+   
         if(!response) {
             return res.status(400).json({status: false, message: "email is not sent"})
         }
@@ -89,7 +91,10 @@ authRouter.post("/register", async (req, res) => {
         return res.status(201).json({
             status: true,
             message: "Successfully registered",
-            user: { email, phoneNumber, uniqueNumber },
+            data: { email, phoneNumber, uniqueNumber,   
+                 verificationToken,
+                verificationTokenExpiresAt,
+                uniqueNumber, },
         });
     } catch (error) {
         console.error(error);
