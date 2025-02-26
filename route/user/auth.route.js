@@ -69,7 +69,7 @@ authRouter.post("/register", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
         const uniqueNumber = `RL-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
-        const verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+        const verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000; 
 
         const user = new Auth({
             email,
@@ -176,7 +176,7 @@ authRouter.post("/verify-email", async (req, res) => {
         await user.save();
 
         res.status(200).json({
-            success: true,
+            status: true,
             message: `Email (${user.email}) verified successfully`,
             data: { email: user.email, isVerified: user.isVerified },
         });
