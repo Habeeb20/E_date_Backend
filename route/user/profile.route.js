@@ -2,7 +2,7 @@ import express from "express";
 import { verifyToken } from "../../middleware/verifyToken.js";
 import User from "../../models/user/auth.schema.js";
 import Profile from "../../models/user/profile.schema.js";
-
+import bcrypt from "bcrypt"
 
 const profilerouter = express.Router()
 

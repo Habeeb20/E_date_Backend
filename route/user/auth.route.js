@@ -1,6 +1,7 @@
 import express from "express";
 import bcryptjs from "bcryptjs"
 import mongoose from "mongoose";
+import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import cloudinary from "cloudinary"
 import { verifyToken } from "../../middleware/verifyToken.js";
@@ -41,10 +42,10 @@ const sendOTPEmail = async(email, otp) => {
 
 
 authRouter.post("/register", async (req, res) => {
-    const { email, password, phoneNumber, confirmPassword } = req.body;
+    const { email, password,  countryNumber, phoneNumber, confirmPassword } = req.body;
 
     try {
-        if (!email || !password || !phoneNumber || !confirmPassword) {
+        if (!email || !password || !phoneNumber || !confirmPassword || !countryNumber) {
             return res.status(400).json({ status: false, error: "All fields are required" });
         }
 
@@ -65,6 +66,7 @@ authRouter.post("/register", async (req, res) => {
         const user = new Auth({
             email,
             phoneNumber,
+            countryNumber,
             password: hashedPassword,
             verificationToken,
             verificationTokenExpiresAt,

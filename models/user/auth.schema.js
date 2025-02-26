@@ -12,6 +12,10 @@ const authSchema  = new mongoose.Schema({
         required: String,
 
     },
+    countryNumber: {
+        type:String,
+        required: String,
+    },
     password: {
         type:String,
         required: String
