@@ -6,11 +6,11 @@ const profileSchema = new mongoose.Schema({
         ref: "User",
         required: true,
       },
-    fName:{
+    firstName:{
         type:String,
         required: true
     },
-    lName:{
+    lastName:{
         type:String,
         required: true
     },
@@ -34,10 +34,10 @@ const profileSchema = new mongoose.Schema({
     ProfilePicture:{
         type:String
     },
-    skinColour:{
+    skinColor:{
         type:String,
     },
-    EyeColour:{
+    EyeColor:{
         type:String
     }
 }, {timestamps: true})
