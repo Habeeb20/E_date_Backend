@@ -155,9 +155,8 @@ authRouter.get("/dashboard", verifyToken, async (req, res) => {
 
 
 
-authRouter.post("/verify-email/:email", async (req, res) => {
-    const { email } = req.params;  
-    const { code } = req.body;     
+authRouter.post("/verify-email", async (req, res) => {
+    const { email, code } = req.body;     
 
     try {
         const user = await Auth.findOne({
@@ -179,7 +178,7 @@ authRouter.post("/verify-email/:email", async (req, res) => {
         res.status(200).json({
             success: true,
             message: `Email (${user.email}) verified successfully`,
-            user: { email: user.email, isVerified: user.isVerified },
+            data: { email: user.email, isVerified: user.isVerified },
         });
 
     } catch (error) {
