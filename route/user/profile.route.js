@@ -8,7 +8,7 @@ const profilerouter = express.Router()
 
 profilerouter.post("/createprofile", verifyToken, async(req, res) => {
     try {
-        const { fName, lName, placeOfBirth, gender, maritalStatus, interest, Nationality, ProfilePicture, skinColour, EyeColour } = req.body;
+        const { fName, lName, dateOfBirth, gender, maritalStatus, interest, Nationality, ProfilePicture, skinColour, EyeColour } = req.body;
         const userId = req.user.id; 
 
      
@@ -17,7 +17,7 @@ profilerouter.post("/createprofile", verifyToken, async(req, res) => {
             return res.status(400).json({ message: "Profile already exists for this user" });
         }
 
-        if (!fName || !lName || !placeOfBirth || !gender || !maritalStatus || !interest || !Nationality) {
+        if (!fName || !lName || !dateOfBirth || !gender || !maritalStatus || !interest || !Nationality) {
             return res.status(400).json({ message: "All required fields must be filled" });
         }
 
@@ -32,7 +32,7 @@ profilerouter.post("/createprofile", verifyToken, async(req, res) => {
             userId,
             fName,
             lName,
-            placeOfBirth,
+            dateOfBirth,
             gender,
             maritalStatus,
             interest,

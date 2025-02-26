@@ -14,7 +14,7 @@ const profileSchema = new mongoose.Schema({
         type:String,
         required: true
     },
-    placeOfBirth:{
+    dateOfBirth:{
         type:String,
         required: true
     },
