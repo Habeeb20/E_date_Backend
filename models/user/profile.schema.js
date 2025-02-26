@@ -33,7 +33,7 @@ const profileSchema = new mongoose.Schema({
         required: true
     },
     interest:[{type:String }],
-    Nationality:{
+    nationality:{
         type:String,
         required: true
     },
