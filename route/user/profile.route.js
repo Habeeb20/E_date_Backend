@@ -19,7 +19,7 @@ profilerouter.post("/createprofile", async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        const existingProfile = await Profile.findOne( userEmail );
+        const existingProfile = await Profile.findOne({ userEmail: userEmail });
         if (existingProfile) {
             return res.status(400).json({ message: "Profile already exists for this user" });
         }
