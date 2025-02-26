@@ -8,18 +8,18 @@ const profilerouter = express.Router()
 
 profilerouter.post("/createprofile", async (req, res) => {
     try {
-        const { email, firstName, lastName, dateOfBirth, gender, maritalStatus, interest, Nationality, ProfilePicture, skinColor, EyeColor } = req.body;
+        const { userEmail, firstName, lastName, dateOfBirth, gender, maritalStatus, interest, Nationality, ProfilePicture, skinColor, EyeColor } = req.body;
 
-        if (!email) {
+        if (!userEmail) {
             return res.status(400).json({ message: "Email is required" });
         }
 
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ userEmail });
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        const existingProfile = await Profile.findOne({ userId: email });
+        const existingProfile = await Profile.findOne( userEmail );
         if (existingProfile) {
             return res.status(400).json({ message: "Profile already exists for this user" });
         }
@@ -28,17 +28,13 @@ profilerouter.post("/createprofile", async (req, res) => {
             return res.status(400).json({ message: "All required fields must be filled" });
         }
 
-        if (!Array.isArray(interest) || interest.length === 0) {
-            return res.status(400).json({ message: "Interest must be a non-empty array" });
-        }
+    
 
-        if (!interest.every(item => typeof item === "string" && item.trim().length > 0)) {
-            return res.status(400).json({ message: "All interests must be non-empty strings" });
-        }
+
 
     
-        const newProfile = new Profile({
-            userEmail: email, 
+        const newProfile = new Profile(
+            userEmail,
             firstName,
             lastName,
             dateOfBirth,
@@ -49,7 +45,7 @@ profilerouter.post("/createprofile", async (req, res) => {
             ProfilePicture,
             skinColor,
             EyeColor,
-        });
+        );
 
         await newProfile.save();
 
