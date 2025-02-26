@@ -33,7 +33,8 @@ profilerouter.post("/createprofile", async (req, res) => {
 
 
     
-        const newProfile = new Profile(
+        const newProfile = new Profile({
+            userId: user._id,
             userEmail,
             firstName,
             lastName,
@@ -45,7 +46,7 @@ profilerouter.post("/createprofile", async (req, res) => {
             ProfilePicture,
             skinColor,
             EyeColor,
-        );
+    });
 
         await newProfile.save();
 
