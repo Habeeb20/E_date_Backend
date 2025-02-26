@@ -36,8 +36,15 @@ const sendOTPEmail = async(email, otp) => {
         text: `Your verification code is: ${otp}`,
 
     };
+    try {
+        await transporter.sendMail(mailOptions);
+        return true
+    } catch (error) {
+        console.log(error)
+        return false
+    }
     
-  await transporter.sendMail(mailOptions);
+
 }
 
 
@@ -74,7 +81,10 @@ authRouter.post("/register", async (req, res) => {
         });
 
         await user.save();
-        await sendOTPEmail(user.email, verificationToken);
+        const response = await sendOTPEmail(user.email, verificationToken);
+        if(!response) {
+            return res.status(400).json({status: false, message: "email is not sent"})
+        }
 
         return res.status(201).json({
             status: true,
