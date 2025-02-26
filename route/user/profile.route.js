@@ -6,12 +6,12 @@ import bcrypt from "bcrypt"
 
 const profilerouter = express.Router()
 
-profilerouter.post("/createprofile", verifyToken, async(req, res) => {
+profilerouter.post("/createprofile", verifyToken, async (req, res) => {
     try {
         const { fName, lName, dateOfBirth, gender, maritalStatus, interest, Nationality, ProfilePicture, skinColour, EyeColour } = req.body;
-        const userId = req.user.id; 
+        const userId = req.user.id;
 
-     
+   
         const existingProfile = await Profile.findOne({ userId });
         if (existingProfile) {
             return res.status(400).json({ message: "Profile already exists for this user" });
@@ -19,6 +19,16 @@ profilerouter.post("/createprofile", verifyToken, async(req, res) => {
 
         if (!fName || !lName || !dateOfBirth || !gender || !maritalStatus || !interest || !Nationality) {
             return res.status(400).json({ message: "All required fields must be filled" });
+        }
+
+     
+        if (!Array.isArray(interest) || interest.length === 0) {
+            return res.status(400).json({ message: "Interest must be a non-empty array" });
+        }
+
+  
+        if (!interest.every(item => typeof item === 'string' && item.trim().length > 0)) {
+            return res.status(400).json({ message: "All interests must be non-empty strings" });
         }
 
         // Ensure the user exists
@@ -35,14 +45,13 @@ profilerouter.post("/createprofile", verifyToken, async(req, res) => {
             dateOfBirth,
             gender,
             maritalStatus,
-            interest,
+            interest, // Will now accept an array
             Nationality,
             ProfilePicture,
             skinColour,
             EyeColour,
         });
 
-      
         await newProfile.save();
 
         res.status(201).json({
@@ -53,10 +62,7 @@ profilerouter.post("/createprofile", verifyToken, async(req, res) => {
         console.error(error);
         res.status(500).json({ message: error.message });
     }
-
-
-})
-
+});
 
 profilerouter.put("/editprofile", verifyToken, async(req, res) => {
     try {
