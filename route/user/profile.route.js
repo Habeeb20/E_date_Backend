@@ -51,7 +51,7 @@ profilerouter.post("/createprofile", async (req, res) => {
         await newProfile.save();
 
         return res.status(201).json({
-            message: "Profile created successfully",
+            status: "Profile created successfully",
             profile: newProfile,
         });
     } catch (error) {
