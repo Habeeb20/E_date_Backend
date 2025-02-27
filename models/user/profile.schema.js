@@ -20,6 +20,11 @@ const profileSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    state:{
+      type:String,
+      required: true
+    },
+    
     dateOfBirth: {
       type: Date,
       required: true,
