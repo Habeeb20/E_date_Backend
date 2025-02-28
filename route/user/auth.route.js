@@ -129,7 +129,7 @@ authRouter.post("/login", async (req, res) => {
         return res.status(200).json({
             status: true,
             message: "Login successful",
-            meta:  token,
+            metadata:  token,
             data: { email: user.email, phoneNumber: user.phoneNumber, uniqueNumber: user.uniqueNumber },
         });
     } catch (error) {
