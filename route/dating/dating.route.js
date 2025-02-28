@@ -101,7 +101,7 @@ datingRoute.post("/create_datingdata", verifyToken,  async (req, res) => {
 
   try {
    
-    const user = await Profile.findOne({ _id: profileId });
+    const user = await Profile.findOne({  profileId });
     if (!user) {
       return res.status(404).json({
         status: false,
