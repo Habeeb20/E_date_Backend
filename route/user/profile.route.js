@@ -8,7 +8,7 @@ const profilerouter = express.Router()
 
 profilerouter.post("/createprofile", async (req, res) => {
     try {
-        const { userEmail, firstName, lastName, state, dateOfBirth, gender, maritalStatus, interest, nationality, ProfilePicture, skinColor, EyeColor } = req.body;
+        const { userEmail, firstName, lastName, state, dateOfBirth, gender, maritalStatus, interest, nationality,     profilePicture, skinColor, EyeColor } = req.body;
 
         if (!userEmail) {
             return res.status(400).json({ message: "Email is required" });
@@ -17,14 +17,40 @@ profilerouter.post("/createprofile", async (req, res) => {
         const user = await User.findOne({ email: userEmail });
         if (!user) {
             return res.status(404).json({ message: "User not found" });
+
+            
         }
+
+        if (!Array.isArray(interest)) {
+            return res.status(400).json({
+              status: false,
+              message: "Interest must be an array"
+            });
+          }
+      
+          if (interest.length === 0) {
+            return res.status(400).json({
+              status: false,
+              message: "Interest array cannot be empty"
+            });
+          }
+      
+          const validInterests = interest.every(item => 
+            typeof item === "string" && item.trim().length > 0
+          );
+          if (!validInterests) {
+            return res.status(400).json({
+              status: false,
+              message: "All interests must be non-empty strings"
+            });
+          }
 
         const existingProfile = await Profile.findOne({ userEmail: userEmail });
         if (existingProfile) {
             return res.status(400).json({ message: "Profile already exists for this user" });
         }
 
-        if (!firstName || !lastName || !state || !dateOfBirth || !gender || !maritalStatus || !nationality) {
+        if (!firstName || !lastName || !state || !dateOfBirth || !gender || !maritalStatus || !nationality || !profilePicture) {
             return res.status(400).json({ message: "All required fields must be filled" });
         }
 
@@ -42,9 +68,9 @@ profilerouter.post("/createprofile", async (req, res) => {
             dateOfBirth,
             gender,
             maritalStatus,
-            interest,
+            interest: interest.map(i => i.trim()),
             nationality,
-            ProfilePicture,
+            profilePicture,
             skinColor,
             EyeColor,
     });

@@ -204,7 +204,7 @@ datingRoute.get("/admirers/:slug", async(req, res) =>  {
         }
         const admireDetails = dating.admirerList.map(admirer => ({
             id: admirer._id,
-            name:`${admirer.firstName}`
+            name:`${admirer.firstName} ${admirer.lastName}`
         }))
 
         return res.status(200).json({
@@ -241,7 +241,7 @@ datingRoute.post("/invite/:slug", verifyToken, async(req, res) => {
         if(recipientProfile.profileId.toString() === senderProfileId){
             return res.status(400).json({
                 status: false,
-                message: "you cannot send an invitation to youself"
+                message: "you cannot send an invitation to yourself"
             })
         }
 
@@ -274,77 +274,73 @@ datingRoute.post("/invite/:slug", verifyToken, async(req, res) => {
 
 //accept or reject invitation
 
-datingRoute.post("/respond-invitation/:slug", verifyToken, async( req, res) => {
+datingRoute.post("/respond-invitation/:slug", verifyToken, async (req, res) => {
     try {
-        const {slug} = req.params;
-        const userProfileId =req.user.id;
-
-        const {senderProfileId, action} = req.body;
-
-        if(!["accept", "reject"].includes(action)){
-            return res.status(400).json({
-                status:false,
-                message: "Action must be 'accept' or 'reject' "
-            })
+      const { slug } = req.params;
+      const userProfileId = req.user.id;
+      const { senderProfileId, action } = req.body;
+  
+      if (!["accept", "reject"].includes(action)) {
+        return res.status(400).json({
+          status: false,
+          message: "Action must be 'accept' or 'reject'"
+        });
+      }
+  
+      const userProfile = await Dating.findOne({ profileId: userProfileId });
+      if (!userProfile || userProfile.slug !== slug) {
+        return res.status(404).json({
+          status: false,
+          message: "Dating profile not found or unauthorized"
+        });
+      }
+  
+      const invitationIndex = userProfile.pendingInvitations.indexOf(senderProfileId);
+      if (invitationIndex === -1) {
+        return res.status(400).json({
+          status: false,
+          message: "No pending invitation from this user"
+        });
+      }
+  
+      if (action === "accept") {
+        const conversation = new Conversation({
+          participants: [userProfileId, senderProfileId]
+        });
+        await conversation.save();
+  
+        userProfile.pendingInvitations.splice(invitationIndex, 1);
+        userProfile.acceptedInvitations.push(senderProfileId);
+        userProfile.chatList.push({ user: senderProfileId, conversationId: conversation._id });
+  
+        const senderProfile = await Dating.findOne({ profileId: senderProfileId });
+        if (!senderProfile) {
+          return res.status(404).json({
+            status: false,
+            message: "Sender profile not found"
+          });
         }
-
-        const userProfile = await DatingFindOne({profileId: userProfileId})
-        if(!userProfile || userProfile.slug !== slug){
-            return res.status(404).json({
-                status: false,
-                message: "Dating profile not found or unauthorized"
-            })
-        }
-
-        const invitationIndex = userProfile.pendingInvitations.indexOf(senderProfileId)
-        if(invitationIndex === -1) {
-            return res.status(400).json({
-                status:false,
-                message: 'no pending invitation from this user'
-            })
-        }
-
-        if(action === "accept"){
-            const conversation = new Conversation({
-                participants:[userProfileId, senderProfileId]
-            })
-
-            await conversation.save()
-            userProfile.pendingInvitations.splice(invitationIndex, 1);
-            userProfile.acceptedInvitations.push(senderProfileId);
-            userProfile.chatList.push({ user: senderProfileId, conversationId: conversation._id });
-
-            const senderProfile = await Dating.findOne({profileId: senderProfileId})
-            if(!senderProfile){
-                return res.status(404).json({
-                   status: false,
-                   message: "sender profile not found" 
-                })
-            }
-            senderProfile.chatList.push({user: userProfileId, conversationId: conversation._id})
-
-            await Promise.all([userProfile.save(), senderProfile.save()]);
-        } else if(action === "reject") {
-            userProfile.pendingInvitations.splice(invitationIndex, 1)
-            await userProfile.save()
-        }
-
-        await userProfile.save()
-
-        return res.status(200).json({
-            status: true,
-            message: 'invitation ${action}ad successfully'
-        })
+        senderProfile.chatList.push({ user: userProfileId, conversationId: conversation._id });
+  
+        await Promise.all([userProfile.save(), senderProfile.save()]);
+      } else if (action === "reject") {
+        userProfile.pendingInvitations.splice(invitationIndex, 1);
+        await userProfile.save();
+      }
+  
+      return res.status(200).json({
+        status: true,
+        message: `Invitation ${action}ed successfully`
+      });
     } catch (error) {
-        console.error("Error responding to invitation:", error);
-    return res.status(500).json({
-      status: false,
-      message: "Server error occurred",
-      error: error.message
-    });
+      console.error("Error responding to invitation:", error);
+      return res.status(500).json({
+        status: false,
+        message: "Server error occurred",
+        error: error.message
+      });
     }
-})
-
+  });
 
 datingRoute.get("/invitation", verifyToken, async(req, res) => {
     try {
