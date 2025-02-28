@@ -167,7 +167,6 @@ authRouter.post("/login", async (req, res) => {
           phoneNumber: user.phoneNumber,
           uniqueNumber: user.uniqueNumber,
         },
-        token,
         profile: null,
         datingProfile: null,
       });

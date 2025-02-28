@@ -94,8 +94,12 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
 
 
 
+  datingRoute.post("/create_datingdata", async (req, res) => {
+    res.send("successfully clicked!!!!!")
+  })
 
-datingRoute.post("/create_datingdata", verifyToken,  upload, async (req, res) => {
+
+datingRoute.post("/create_dating", verifyToken,  upload, async (req, res) => {
   const profileId = req.user.id;
   const { genotype, hobbies, occupation, bloodgroup } = req.body;
 
@@ -639,4 +643,8 @@ datingRoute.get("/match/:slug", verifyToken, async(req, res) =>{
         })
     }
 })
+
+
+
+
 export default datingRoute;
