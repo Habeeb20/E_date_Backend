@@ -20,6 +20,16 @@ const profileSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    bio:{
+      type: String,
+      required: true,
+    },
+
+    religion:{
+      type: String,
+      required: true,
+    },
+
     state:{
       type:String,
       required: true
