@@ -271,45 +271,66 @@ datingRoute.get("/profile/:slug", async (req, res) => {
 
 
 
-datingRoute.post("/admire/:slug", verifyToken,  async(req, res) => {
+datingRoute.post("/admire", verifyToken, async (req, res) => {
     try {
-        const {slug} = req.params;
-        const admirerProfileId = req.user.id;
-
-        const datingProfile = await Dating.findOne({ slug });
-    if (!datingProfile) {
-      return res.status(404).json({
-        status: false,
-        message: "Dating profile not found"
-      });
-    }
-
-
-    if(datingProfile.admirerList.includes(admirerProfileId)){
+      const { slug } = req.body; 
+      const userId = req.user.id; 
+   
+      if (!slug || typeof slug !== "string" || slug.trim() === "") {
         return res.status(400).json({
-            status: false,
-            message: "You have already admired this profile"
-          });
-    }
+          status: false,
+          message: "Slug is required and must be a non-empty string"
+        });
+      }
+  
+ 
+      const admirerProfile = await Profile.findOne({ userId });
+      if (!admirerProfile) {
+        return res.status(404).json({
+          status: false,
+          message: "Your profile not found"
+        });
+      }
+      const admirerProfileId = admirerProfile._id; 
+  
+   
+      const datingProfile = await Dating.findOne({ slug });
+      if (!datingProfile) {
+        return res.status(404).json({
+          status: false,
+          message: "Dating profile not found"
+        });
+      }
+  
+  
+      if (datingProfile.admirerList.includes(admirerProfileId)) {
+        return res.status(400).json({
+          status: false,
+          message: "You have already admired this profile"
+        });
+      }
+  
+  
+      datingProfile.admirers += 1;
+      datingProfile.admirerList.push(admirerProfileId);
+      await datingProfile.save();
 
-    datingProfile.admirers +=1;
-    datingProfile.admirerList.push(admirerProfileId)
-    await datingProfile.save()
-
-    return res.status(200).json({
+      return res.status(200).json({
         status: true,
         message: "Profile admired successfully",
         data: {
           admirers: datingProfile.admirers,
           admirerList: datingProfile.admirerList
         }
-      })
+      });
     } catch (error) {
-        console.log(error)
-        res.status(500).json({message: " an error occurred with the server",
-            error: error.message})
+      console.log(error);
+      res.status(500).json({
+        message: "An error occurred with the server",
+        error: error.message
+      });
     }
-})
+  });
 
 
 
