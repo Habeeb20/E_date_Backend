@@ -3,6 +3,15 @@ import { verifyToken } from "../../middleware/verifyToken.js";
 import User from "../../models/user/auth.schema.js";
 import Profile from "../../models/user/profile.schema.js";
 import bcrypt from "bcrypt"
+import cloudinary from "cloudinary"
+
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+  
 
 const profilerouter = express.Router()
 
@@ -88,6 +97,8 @@ profilerouter.post("/createprofile", async (req, res) => {
         return res.status(500).json({ message: error.message });
     }
 });
+
+
 profilerouter.put("/editprofile", verifyToken, async(req, res) => {
     try {
         const userId = req.user.id; 

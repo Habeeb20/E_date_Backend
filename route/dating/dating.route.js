@@ -4,6 +4,24 @@ import Profile from "../../models/user/profile.schema.js";
 import { verifyToken } from "../../middleware/verifyToken.js";
 import User from "../../models/user/auth.schema.js"
 import Conversation from "../../models/Dating/conversation.schema.js";
+import cloudinary from "cloudinary"
+import multer from "multer";
+
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret:process.env.CLOUDINARY_API_SECRET,
+})
+
+
+const storage = multer.memoryStorage(); 
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+}).array("pictures", 15); 
+
+
 const datingRoute = express.Router();
 
 
@@ -77,81 +95,111 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
 
 
 
+datingRoute.post("/create_datingdata", verifyToken, upload, async (req, res) => {
+  const profileId = req.user.id;
+  const { genotype, hobbies, occupation, bloodgroup } = req.body;
 
-datingRoute.post("/create_datingdata", verifyToken, async (req, res) => {
-    const profileId = req.user.id;
-    const { genotype, hobbies, occupation, bloodgroup, pictures } = req.body;
-
-    try {
-     
-        const user = await Profile.findOne({ _id: profileId });
-        if (!user) {
-            return res.status(404).json({ 
-                status: false, 
-                message: "Profile not found" 
-            });
-        }
-
+  try {
    
-        const existingDatingProfile = await Dating.findOne({ profileId });
-        if (existingDatingProfile) {
-            return res.status(400).json({ 
-                status: false, 
-                message: "Dating profile already exists for this user" 
-            });
-        }
-
-        if (!Array.isArray(hobbies)) {
-            return res.status(400).json({
-                status: false,
-                message: "Hobbies must be an array"
-            });
-        }
-
-     
-        if (hobbies.length === 0) {
-            return res.status(400).json({
-                status: false,
-                message: "Hobbies array cannot be empty"
-            });
-        }
-
-        const validHobbies = hobbies.every(hobby => 
-            typeof hobby === 'string' && hobby.trim().length > 0
-        );
-        if (!validHobbies) {
-            return res.status(400).json({
-                status: false,
-                message: "All hobbies must be non-empty strings"
-            });
-        }
-
-   
-        const datingUser = new Dating({
-            profileId,
-            genotype,
-            hobbies: hobbies.map(hobby => hobby.trim()), 
-            occupation,
-            bloodgroup,
-            pictures: pictures || []
-        });
-
-        await datingUser.save();
-
-        return res.status(201).json({ 
-            status: true, 
-            message: "Dating profile successfully created",
-            data: datingUser 
-        });
-    } catch (error) {
-        console.error("Error creating dating profile:", error);
-        return res.status(500).json({ 
-            status: false,
-            message: "Server error occurred",
-            error: error.message 
-        });
+    const user = await Profile.findOne({ _id: profileId });
+    if (!user) {
+      return res.status(404).json({
+        status: false,
+        message: "Profile not found"
+      });
     }
+
+
+    const existingDatingProfile = await Dating.findOne({ profileId });
+    if (existingDatingProfile) {
+      return res.status(400).json({
+        status: false,
+        message: "Dating profile already exists for this user"
+      });
+    }
+
+ 
+    if (!Array.isArray(hobbies)) {
+      return res.status(400).json({
+        status: false,
+        message: "Hobbies must be an array"
+      });
+    }
+
+    if (hobbies.length === 0) {
+      return res.status(400).json({
+        status: false,
+        message: "Hobbies array cannot be empty"
+      });
+    }
+
+    const validHobbies = hobbies.every(hobby =>
+      typeof hobby === "string" && hobby.trim().length > 0
+    );
+    if (!validHobbies) {
+      return res.status(400).json({
+        status: false,
+        message: "All hobbies must be non-empty strings"
+      });
+    }
+
+    let pictureUrls = [];
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map(file =>
+        new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.v2.uploader.upload_stream(
+            { resource_type: "image" },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result.secure_url);
+            }
+          );
+          uploadStream.end(file.buffer); 
+        })
+      );
+
+      pictureUrls = await Promise.all(uploadPromises); 
+    }
+
+    if (!genotype || !occupation || !bloodgroup) {
+      return res.status(400).json({
+        status: false,
+        message: "Genotype, occupation, and bloodgroup are required"
+      });
+    }
+
+  
+    const datingUser = new Dating({
+      profileId,
+      genotype,
+      hobbies: hobbies.map(hobby => hobby.trim()),
+      occupation,
+      bloodgroup,
+      pictures: pictureUrls,
+    });
+
+    await datingUser.save();
+
+
+    return res.status(201).json({
+      status: true,
+      message: "Dating profile successfully created",
+      data: datingUser
+    });
+  } catch (error) {
+    console.error("Error creating dating profile:", error);
+    return res.status(500).json({
+      status: false,
+      message: "Server error occurred",
+      error: error.message
+    });
+  }
 });
+
+
+
+
+
 
 datingRoute.get("/all_users", verifyToken, async (req, res) => {
     try {
@@ -510,4 +558,85 @@ datingRoute.post("/end-chat/:conversationId", verifyToken, async (req, res) => {
   
     return res.status(200).json({ status: true, message: "Chat ended" });
   });
+
+
+
+//interest matches
+
+datingRoute.get("/match/:slug", verifyToken, async(req, res) =>{
+    try {
+        const userAUserId = req.user.id; 
+        const { slug } = req.params;
+
+        const userAProfile = await Profile.findOne({ userId: userAUserId });
+    if (!userAProfile) {
+      return res.status(404).json({
+        status: false,
+        message: "Your profile is not found"
+      });
+    }
+
+    const userBDatingProfile = await Dating.findOne({ slug });
+    if (!userBDatingProfile) {
+      return res.status(404).json({
+        status: false,
+        message: "Target user's dating profile not found"
+      });
+    }
+
+    const userBProfile = await Profile.findOne({ _id: userBDatingProfile.profileId });
+    if (!userBProfile) {
+      return res.status(404).json({
+        status: false,
+        message: "Target user's profile not found"
+      });
+    }
+
+ 
+    const userAInterests = userAProfile.interest; 
+    const userBInterests = userBProfile.interest;
+
+    const matchingInterests = userAInterests.filter(interest =>
+        userBInterests.includes(interest)
+      ); 
+  
+   
+      const matchCount = matchingInterests.length;
+      const totalPossibleMatches = Math.max(userAInterests.length, userBInterests.length); 
+      const basePercentagePerMatch = 20; 
+      const matchPercentage = Math.min(
+        matchCount * basePercentagePerMatch,
+        100
+      );
+
+      return res.status(200).json({
+        status: true,
+        message: "Match calculated successfully",
+        data: {
+          userA: {
+            firstName: userAProfile.firstName,
+            lastName: userAProfile.lastName,
+            interests: userAInterests
+          },
+          userB: {
+            firstName: userBProfile.firstName,
+            lastName: userBProfile.lastName,
+            interests: userBInterests,
+            datingSlug: userBDatingProfile.slug
+          },
+          match: {
+            percentage: matchPercentage,
+            matchingInterests: matchingInterests
+          }
+        }
+      });
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            status:false,
+            message: "an error occurred from server"
+           
+        })
+    }
+})
 export default datingRoute;
