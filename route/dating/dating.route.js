@@ -6,6 +6,78 @@ import User from "../../models/user/auth.schema.js"
 import Conversation from "../../models/Dating/conversation.schema.js";
 const datingRoute = express.Router();
 
+
+datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
+    const profileId = req.user.id; 
+  
+    try {
+      
+      const profile = await Profile.findOne({ userId: profileId });
+      if (!profile) {
+        return res.status(404).json({
+          status: false,
+          message: "Your profile is not found"
+        });
+      }
+  
+      
+      const datingProfile = await Dating.findOne({ profileId: profile._id })
+        .populate("profileId", "userEmail firstName lastName");
+  
+ 
+      if (!datingProfile) {
+        return res.status(404).json({
+          status: false,
+          message: "You have not created a dating profile yet"
+        });
+      }
+  
+     
+      return res.status(200).json({
+        status: true,
+        message: "Dashboard data retrieved successfully",
+        data: {
+          profile: {
+            userEmail: profile.userEmail,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            state: profile.state,
+            dateOfBirth: profile.dateOfBirth,
+            gender: profile.gender,
+            maritalStatus: profile.maritalStatus,
+            interest: profile.interest,
+            nationality: profile.nationality,
+            profilePicture: profile.profilePicture,
+            skinColor: profile.skinColor,
+            EyeColor: profile.EyeColor,
+            slug: profile.slug
+          },
+          datingProfile: {
+            genotype: datingProfile.genotype,
+            hobbies: datingProfile.hobbies,
+            occupation: datingProfile.occupation,
+            bloodgroup: datingProfile.bloodgroup,
+            pictures: datingProfile.pictures,
+            admirers: datingProfile.admirers,
+            slug: datingProfile.slug
+           
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching dating dashboard:", error);
+      return res.status(500).json({
+        status: false,
+        message: "Server error occurred",
+        error: error.message
+      });
+    }
+  });
+
+
+
+
+
 datingRoute.post("/create_datingdata", verifyToken, async (req, res) => {
     const profileId = req.user.id;
     const { genotype, hobbies, occupation, bloodgroup, pictures } = req.body;
@@ -94,7 +166,7 @@ datingRoute.get("/all_users", verifyToken, async (req, res) => {
         }
 
         const datingData = await Dating.find({ profileId: userId });
-        if (!datingData || datingData.length === 0) {
+        if (!datingData ) {
             return res.status(404).json({ 
                 status: false, 
                 message: "No dating profiles found" 
