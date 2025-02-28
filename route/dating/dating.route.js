@@ -95,108 +95,119 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
 
 
 
-datingRoute.post("/create_datingdata", verifyToken,  async (req, res) => {
-  const profileId = req.user.id;
-  const { genotype, hobbies, occupation, bloodgroup } = req.body;
-
-  try {
+  datingRoute.post("/create_datingdata", verifyToken, async (req, res) => {
+    const userId = req.user.id; 
+    const { genotype, hobbies, occupation, bloodgroup } = req.body;
+  
+    try {
    
-    const user = await Profile.findOne({  profileId });
-    if (!user) {
-      return res.status(404).json({
-        status: false,
-        message: "Profile not found"
-      });
-    }
-
-
-    const existingDatingProfile = await Dating.findOne({ profileId });
-    if (existingDatingProfile) {
-      return res.status(400).json({
-        status: false,
-        message: "Dating profile already exists for this user"
-      });
-    }
-
+      const profile = await Profile.findOne({ userId });
+      if (!profile) {
+        return res.status(404).json({
+          status: false,
+          message: "Profile not found"
+        });
+      }
+      const profileId = profile._id; 
+  
  
-    if (!Array.isArray(hobbies)) {
-      return res.status(400).json({
-        status: false,
-        message: "Hobbies must be an array"
-      });
-    }
+      const existingDatingProfile = await Dating.findOne({ profileId });
+      if (existingDatingProfile) {
+        return res.status(400).json({
+          status: false,
+          message: "Dating profile already exists for this user"
+        });
+      }
+  
 
-    if (hobbies.length === 0) {
-      return res.status(400).json({
-        status: false,
-        message: "Hobbies array cannot be empty"
-      });
-    }
-
-    const validHobbies = hobbies.every(hobby =>
-      typeof hobby === "string" && hobby.trim().length > 0
-    );
-    if (!validHobbies) {
-      return res.status(400).json({
-        status: false,
-        message: "All hobbies must be non-empty strings"
-      });
-    }
-
+      if (!Array.isArray(hobbies)) {
+        return res.status(400).json({
+          status: false,
+          message: "Hobbies must be an array"
+        });
+      }
+  
+      if (hobbies.length === 0) {
+        return res.status(400).json({
+          status: false,
+          message: "Hobbies array cannot be empty"
+        });
+      }
+  
+      const validHobbies = hobbies.every(hobby =>
+        typeof hobby === "string" && hobby.trim().length > 0
+      );
+      if (!validHobbies) {
+        return res.status(400).json({
+          status: false,
+          message: "All hobbies must be non-empty strings"
+        });
+      }
+  
+    
     let pictureUrls = [];
-    if (req.files && req.files.length > 0) {
-      const uploadPromises = req.files.map(file =>
+    if (pictures && Array.isArray(pictures) && pictures.length > 0) {
+      if (pictures.length > 15) {
+        return res.status(400).json({
+          status: false,
+          message: "Maximum of 15 pictures allowed"
+        });
+      }
+
+      const uploadPromises = pictures.map(base64String =>
         new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.v2.uploader.upload_stream(
+      
+          if (!base64String.startsWith("data:image/")) {
+            return reject(new Error("Invalid image format"));
+          }
+
+          cloudinary.v2.uploader.upload(
+            base64String, 
             { resource_type: "image" },
             (error, result) => {
               if (error) reject(error);
               else resolve(result.secure_url);
             }
           );
-          uploadStream.end(file.buffer); 
         })
       );
 
-      pictureUrls = await Promise.all(uploadPromises); 
+      pictureUrls = await Promise.all(uploadPromises);
     }
+   
+      if (!genotype || !occupation || !bloodgroup) {
+        return res.status(400).json({
+          status: false,
+          message: "Genotype, occupation, and bloodgroup are required"
+        });
+      }
+  
 
-    if (!genotype || !occupation || !bloodgroup) {
-      return res.status(400).json({
+      const datingUser = new Dating({
+        profileId, 
+        genotype,
+        hobbies: hobbies.map(hobby => hobby.trim()),
+        occupation,
+        bloodgroup,
+        pictures: pictureUrls,
+      });
+  
+      await datingUser.save();
+
+      return res.status(201).json({
+        status: true,
+        message: "Dating profile successfully created",
+        data: datingUser
+      });
+    } catch (error) {
+      console.error("Error creating dating profile:", error);
+      return res.status(500).json({
         status: false,
-        message: "Genotype, occupation, and bloodgroup are required"
+        message: "Server error occurred",
+        error: error.message
       });
     }
-
-  
-    const datingUser = new Dating({
-      profileId,
-      genotype,
-      hobbies: hobbies.map(hobby => hobby.trim()),
-      occupation,
-      bloodgroup,
-      pictures: pictureUrls,
-    });
-
-    await datingUser.save();
-
-
-    return res.status(201).json({
-      status: true,
-      message: "Dating profile successfully created",
-      data: datingUser
-    });
-  } catch (error) {
-    console.error("Error creating dating profile:", error);
-    return res.status(500).json({
-      status: false,
-      message: "Server error occurred",
-      error: error.message
-    });
-  }
-});
-
-
+  });
 
 
 
