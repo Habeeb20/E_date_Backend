@@ -191,7 +191,7 @@ authRouter.post("/login", async (req, res) => {
           phoneNumber: user.phoneNumber,
           countryNumber: user.countryNumber,
         },
-        token,
+        metadata: token,
         profile: {
           userEmail: profile.userEmail,
           firstName: profile.firstName,
