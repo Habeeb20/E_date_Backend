@@ -130,7 +130,7 @@ authRouter.post("/login", async (req, res) => {
             status: true,
             message: "Login successful",
             token,
-            user: { email: user.email, phoneNumber: user.phoneNumber, uniqueNumber: user.uniqueNumber },
+            data: { email: user.email, phoneNumber: user.phoneNumber, uniqueNumber: user.uniqueNumber },
         });
     } catch (error) {
         console.error(error);
