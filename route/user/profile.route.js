@@ -29,7 +29,7 @@ profilerouter.post("/createprofile", async (req, res) => {
       dateOfBirth,
       gender,
       maritalStatus,
-      interest,
+      interests,
       nationality,
       profilePicture,
       skinColor,
@@ -48,19 +48,19 @@ profilerouter.post("/createprofile", async (req, res) => {
     }
 
 
-    let interests = Array.isArray(interest)
-      ? interest
-      : typeof interest === "string" && interest.trim()
-      ? [interest.trim()]
+    let interest = Array.isArray(interests)
+      ? interests
+      : typeof interest === "string" && interests.trim()
+      ? [interests.trim()]
       : [];
-    if (interests.length === 0) {
+    if (interest.length === 0) {
       return res.status(400).json({
         status: false,
         message: "Interest array cannot be empty",
       });
     }
 
-    const validInterests = interests.every(
+    const validInterests = interest.every(
       (item) => typeof item === "string" && item.trim().length > 0
     );
     if (!validInterests) {
@@ -135,7 +135,7 @@ profilerouter.post("/createprofile", async (req, res) => {
       dateOfBirth: birthDate,
       gender: gender.trim(),
       maritalStatus: maritalStatus.trim(),
-      interest: interests.map((i) => i.trim()), 
+      interests: interest.map((i) => i.trim()), 
       nationality: nationality.trim(),
       religion: religion.trim(),
       bio: bio.trim(),
