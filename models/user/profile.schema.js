@@ -20,10 +20,6 @@ const profileSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    bio:{
-      type: String,
-      // required: true,
-    },
 
  
     state:{
@@ -56,7 +52,7 @@ const profileSchema = new mongoose.Schema(
     skinColor: {
       type: String,
     },
-    EyeColor: {
+    eyeColor: {
       type: String,
     },
 

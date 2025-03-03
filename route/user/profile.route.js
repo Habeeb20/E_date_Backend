@@ -22,7 +22,6 @@ profilerouter.post("/createprofile", async (req, res) => {
     const {
       userEmail,
       firstName,
-
       lastName,
       state,
       dateOfBirth,
@@ -32,7 +31,7 @@ profilerouter.post("/createprofile", async (req, res) => {
       nationality,
       profilePicture,
       skinColor,
-      EyeColor,
+      eyeColor,
     } = req.body;
 
     
@@ -136,11 +135,9 @@ profilerouter.post("/createprofile", async (req, res) => {
       maritalStatus: maritalStatus.trim(),
       interests: interest.map((i) => i.trim()), 
       nationality: nationality.trim(),
-    
-      bio: bio.trim(),
       profilePicture: normalizedProfilePicture,
       skinColor: skinColor?.trim(),
-      EyeColor: EyeColor?.trim(),
+      eyeColor: eyeColor?.trim(),
     });
 
 
