@@ -419,36 +419,64 @@ datingRoute.post("/admire", verifyToken, async (req, res) => {
   });
 
 
-
-datingRoute.get("/admirers/:slug", async(req, res) =>  {
+  datingRoute.get("/admirers/:slug", verifyToken, async (req, res) => {
     try {
-        const {slug} = req.params;
+      const { slug } = req.params;
+      const userId = req.user.id; 
+  
+    
+      const myProfile = await Profile.findOne({ userId });
+      if (!myProfile) {
+        return res.status(404).json({
+          status: false,
+          message: "Your profile not found"
+        });
+      }
+      const profileId = myProfile._id; 
+  
+   
+      const authDatingProfile = await Dating.findOne({ profileId, slug });
+      if (!authDatingProfile) {
+        return res.status(404).json({
+          status: false,
+          message: "Dating profile not found or unauthorized"
+        });
+      }
+  
 
-        const dating = await Dating.findOne({slug}).populate("admirerList", "firstName lastName").exec()
+      const dating = await Dating.findOne({ slug })
+        .populate("admirerList", "firstName lastName") 
+        .exec();
+  
+      if (!dating) {
+        return res.status(404).json({
+          status: false,
+          message: "Dating profile not found"
+        });
+      }
+  
+    
+      const admirers = dating.admirerList.map(admirer => ({
+        id: admirer._id,
+        name: `${admirer.firstName} ${admirer.lastName}`
+      }));
 
-        if(!dating) {
-            return res.status(404).json({message: "admirer not found"})
+      return res.status(200).json({
+        status: true,
+        message: "Admirers retrieved successfully",
+        data: {
+          admirersCount: dating.admirers,
+          admirers: admirers 
         }
-        const admireDetails = dating.admirerList.map(admirer => ({
-            id: admirer._id,
-            name:`${admirer.firstName} ${admirer.lastName}`
-        }))
-
-        return res.status(200).json({
-            status: true,
-            message: "admirers retrieved successfully",
-            data:{
-                admireDetails: dating.admirers,
-                admirers: admireDetails
-            }
-        })
+      });
     } catch (error) {
-        console.log(error)
-        return res.status(500).json({message: "server error", error})
+      console.error("Error fetching admirers:", error);
+      return res.status(500).json({
+        status: false,
+        message: "Server error occurred"
+      });
     }
-})
-
-
+  });
 
 
 //send invitation
