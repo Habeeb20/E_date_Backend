@@ -8,11 +8,19 @@ import cloudinary from "cloudinary"
 import multer from "multer";
 
 
+// cloudinary.config({
+//     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+//     api_key: process.env.CLOUDINARY_API_KEY,
+//     api_secret:process.env.CLOUDINARY_API_SECRET,
+// })
+
 cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret:process.env.CLOUDINARY_API_SECRET,
+  cloud_name: "dc0poqt9l",
+  api_key: "624216876378923",
+  api_secret: "rEb4aQiEt5my3nIp8PZ38J9X4vU",
 })
+
+
 
 
 const storage = multer.memoryStorage(); 
@@ -94,13 +102,19 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
 
 
 
-
   datingRoute.post("/create_datingdata", verifyToken, async (req, res) => {
-    const userId = req.user.id; 
-    const { genotype, hobbies, occupation, bloodgroup } = req.body;
+    const userId = req.user.id;
+    const { genotype, hobbies: hobbiesInput, occupation, bloodgroup, pictures } = req.body;
   
     try {
-   
+
+      if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_SECRET) {
+        return res.status(500).json({
+          status: false,
+          message: "Server configuration error: Cloudinary credentials missing"
+        });
+      }
+    
       const profile = await Profile.findOne({ userId });
       if (!profile) {
         return res.status(404).json({
@@ -108,9 +122,9 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
           message: "Profile not found"
         });
       }
-      const profileId = profile._id; 
+      const profileId = profile._id;
   
- 
+    
       const existingDatingProfile = await Dating.findOne({ profileId });
       if (existingDatingProfile) {
         return res.status(400).json({
@@ -119,18 +133,17 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
         });
       }
   
-
-      if (!Array.isArray(hobbies)) {
-        return res.status(400).json({
-          status: false,
-          message: "Hobbies must be an array"
-        });
-      }
+      let hobbies = Array.isArray(hobbiesInput)
+        ? hobbiesInput
+        : typeof hobbiesInput === "string" && hobbiesInput.trim()
+        ? [hobbiesInput.trim()]
+        : [];
+  
   
       if (hobbies.length === 0) {
         return res.status(400).json({
           status: false,
-          message: "Hobbies array cannot be empty"
+          message: "Hobbies cannot be empty"
         });
       }
   
@@ -144,37 +157,35 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
         });
       }
   
-    
-    let pictureUrls = [];
-    if (pictures && Array.isArray(pictures) && pictures.length > 0) {
-      if (pictures.length > 15) {
-        return res.status(400).json({
-          status: false,
-          message: "Maximum of 15 pictures allowed"
-        });
-      }
-
-      const uploadPromises = pictures.map(base64String =>
-        new Promise((resolve, reject) => {
-      
-          if (!base64String.startsWith("data:image/")) {
-            return reject(new Error("Invalid image format"));
-          }
-
-          cloudinary.v2.uploader.upload(
-            base64String, 
-            { resource_type: "image" },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result.secure_url);
-            }
-          );
-        })
-      );
-
-      pictureUrls = await Promise.all(uploadPromises);
-    }
    
+      let pictureUrls = [];
+      if (pictures && Array.isArray(pictures) && pictures.length > 0) {
+        if (pictures.length > 15) {
+          return res.status(400).json({
+            status: false,
+            message: "Maximum of 15 pictures allowed"
+          });
+        }
+  
+        const uploadPromises = pictures.map(base64String =>
+          new Promise((resolve, reject) => {
+            if (!base64String.startsWith("data:image/")) {
+              return reject(new Error("Invalid image format"));
+            }
+            cloudinary.v2.uploader.upload(
+              base64String,
+              { resource_type: "image" },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result.secure_url);
+              }
+            );
+          })
+        );
+        pictureUrls = await Promise.all(uploadPromises);
+      }
+  
+     
       if (!genotype || !occupation || !bloodgroup) {
         return res.status(400).json({
           status: false,
@@ -182,9 +193,9 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
         });
       }
   
-
+  
       const datingUser = new Dating({
-        profileId, 
+        profileId,
         genotype,
         hobbies: hobbies.map(hobby => hobby.trim()),
         occupation,
@@ -193,7 +204,8 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
       });
   
       await datingUser.save();
-
+  
+      // Step 8: Send response
       return res.status(201).json({
         status: true,
         message: "Dating profile successfully created",
@@ -208,8 +220,6 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
       });
     }
   });
-
-
 
 
 datingRoute.get("/all_users", verifyToken, async (req, res) => {

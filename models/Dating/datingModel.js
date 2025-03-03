@@ -48,17 +48,17 @@ const datingModelSchema = new mongoose.Schema(
         ref: "Profile",
       },
     ],
-    pictures: [
-      {
+  pictures: {
+      type: [{
         type: String,
-        validate: {
-          validator: function (array) {
-            return array.length <= 15;
-          },
-          message: "You can upload a maximum of 15 pictures",
+      }],
+      validate: {
+        validator: function (array) {
+          return Array.isArray(array) && array.length <= 15;
         },
+        message: "You can upload a maximum of 15 pictures",
       },
-    ],
+    },
     chatList: [
       {
         user: {
