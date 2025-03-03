@@ -222,36 +222,67 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
   });
 
 
-
-  datingRoute.get("/get-datingusers", verifyToken, async(req, res) => {
+  datingRoute.get("/get-datingusers", verifyToken, async (req, res) => {
     try {
-      const userId = req.user.id;
-      const user = await User.findOne({ _id: userId})
-
-      if(!user) {
+      const userId = req.user.id; 
+  
+    
+      const user = await User.findOne({ _id: userId });
+      if (!user) {
         return res.status(404).json({
-          status: false, 
-          message: "User not found" 
-        })
+          status: false,
+          message: "User not found"
+        });
       }
 
-      const datingData = await Dating.find({})
+      const authProfile = await Profile.findOne({ userId });
+      if (!authProfile) {
+        return res.status(404).json({
+          status: false,
+          message: "Your profile not found"
+        });
+      }
+      const authProfileId = authProfile._id; 
+  
 
+      const authDatingProfile = await Dating.findOne({ profileId: authProfileId });
+      const admirerProfileIds = authDatingProfile ? authDatingProfile.admirerList : [];
+  
+   
+      const datingData = await Dating.find({
+        profileId: { $ne: authProfileId, $nin: admirerProfileIds } 
+      })
+        .populate("profileId", "userEmail firstName lastName") 
+        .select("-admirerList -pendingInvitations -acceptedInvitations -chatList"); 
+  
+  
       return res.status(200).json({
         status: true,
-        message: "all users with dating profile",
-        data: datingData
-      })
+        message: "All other users with dating profiles (excluding admirers)",
+        data: datingData.map(profile => ({
+          slug: profile.slug,
+          genotype: profile.genotype,
+          hobbies: profile.hobbies,
+          occupation: profile.occupation,
+          bloodgroup: profile.bloodgroup,
+          pictures: profile.pictures,
+          admirers: profile.admirers,
+          profile: {
+            userEmail: profile.profileId.userEmail,
+            firstName: profile.profileId.firstName,
+            lastName: profile.profileId.lastName
+          }
+        }))
+      });
     } catch (error) {
       console.error("Error fetching dating profiles:", error);
-      return res.status(500).json({ 
-          status: false, 
-          message: "Server error occurred",
-          error: error.message 
+      return res.status(500).json({
+        status: false,
+        message: "Server error occurred",
+        error: error.message
       });
     }
-  })
-
+  });
 
 
 
