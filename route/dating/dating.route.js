@@ -104,7 +104,7 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
 
   datingRoute.post("/create_datingdata", verifyToken, async (req, res) => {
     const userId = req.user.id;
-    const { genotype, hobbies: hobbiesInput, occupation, bloodgroup, pictures } = req.body;
+    const { genotype, hobbies: hobbiesInput, occupation, bloodGroup, pictures } = req.body;
   
     try {
 
@@ -181,13 +181,20 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
       }
   
      
-    
+      if (!genotype || !occupation || !bloodGroup) {
+        return res.status(400).json({
+          status: false,
+          message: "Genotype, occupation, and bloodgroup are required"
+        });
+      }
+  
+  
       const datingUser = new Dating({
         profileId,
         genotype,
         hobbies: hobbies.map(hobby => hobby.trim()),
         occupation,
-        bloodgroup,
+        bloodGroup,
         pictures: pictureUrls,
       });
   

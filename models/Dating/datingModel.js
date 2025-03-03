@@ -21,7 +21,7 @@ const datingModelSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    bloodgroup: {
+    bloodGroup: {
       type: String,
       required: true,
     },
