@@ -108,12 +108,7 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
   
     try {
 
-      if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_SECRET) {
-        return res.status(500).json({
-          status: false,
-          message: "Server configuration error: Cloudinary credentials missing"
-        });
-      }
+   
     
       const profile = await Profile.findOne({ userId });
       if (!profile) {
