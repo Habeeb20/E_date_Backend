@@ -181,14 +181,7 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
       }
   
      
-      if (!genotype || !occupation || !bloodgroup) {
-        return res.status(400).json({
-          status: false,
-          message: "Genotype, occupation, and bloodgroup are required"
-        });
-      }
-  
-  
+    
       const datingUser = new Dating({
         profileId,
         genotype,
