@@ -22,14 +22,14 @@ profilerouter.post("/createprofile", async (req, res) => {
     const {
       userEmail,
       firstName,
-      bio,
+
       religion,
       lastName,
       state,
       dateOfBirth,
       gender,
       maritalStatus,
-
+      interest,
       nationality,
       profilePicture,
       skinColor,
@@ -48,27 +48,27 @@ profilerouter.post("/createprofile", async (req, res) => {
     }
 
 
-    // let interests = Array.isArray(interest)
-    //   ? interest
-    //   : typeof interest === "string" && interest.trim()
-    //   ? [interest.trim()]
-    //   : [];
-    // if (interests.length === 0) {
-    //   return res.status(400).json({
-    //     status: false,
-    //     message: "Interest array cannot be empty",
-    //   });
-    // }
+    let interests = Array.isArray(interest)
+      ? interest
+      : typeof interest === "string" && interest.trim()
+      ? [interest.trim()]
+      : [];
+    if (interests.length === 0) {
+      return res.status(400).json({
+        status: false,
+        message: "Interest array cannot be empty",
+      });
+    }
 
-    // const validInterests = interests.every(
-    //   (item) => typeof item === "string" && item.trim().length > 0
-    // );
-    // if (!validInterests) {
-    //   return res.status(400).json({
-    //     status: false,
-    //     message: "All interests must be non-empty strings",
-    //   });
-    // }
+    const validInterests = interests.every(
+      (item) => typeof item === "string" && item.trim().length > 0
+    );
+    if (!validInterests) {
+      return res.status(400).json({
+        status: false,
+        message: "All interests must be non-empty strings",
+      });
+    }
 
 
     const existingProfile = await Profile.findOne({ userEmail });
@@ -85,7 +85,7 @@ profilerouter.post("/createprofile", async (req, res) => {
       !lastName ||
       !state ||
       !religion ||
-      !bio ||
+ 
       !dateOfBirth ||
       !gender ||
       !maritalStatus ||
@@ -135,7 +135,7 @@ profilerouter.post("/createprofile", async (req, res) => {
       dateOfBirth: birthDate,
       gender: gender.trim(),
       maritalStatus: maritalStatus.trim(),
-      // interest: interests.map((i) => i.trim()), 
+      interest: interests.map((i) => i.trim()), 
       nationality: nationality.trim(),
       religion: religion.trim(),
       bio: bio.trim(),

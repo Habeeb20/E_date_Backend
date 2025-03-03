@@ -22,7 +22,7 @@ const profileSchema = new mongoose.Schema(
     },
     bio:{
       type: String,
-      required: true,
+      // required: true,
     },
 
     religion:{
@@ -47,8 +47,8 @@ const profileSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    interest: { type: String, },
-    // interest: [{ type: String, required: true }],
+    // interest: { type: String, },
+    interest: [{ type: String, required: true }],
     nationality: {
       type: String,
       required: true,
