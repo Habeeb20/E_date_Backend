@@ -105,21 +105,10 @@ profilerouter.post("/createprofile", async (req, res) => {
     }
 
 
-    let normalizedProfilePicture = Array.isArray(profilePicture)
-      ? profilePicture
-      : typeof profilePicture === "string" && profilePicture.trim()
-      ? [profilePicture.trim()]
-      : [];
-    if (normalizedProfilePicture.length === 0) {
+    if (typeof profilePicture !== "string" || !profilePicture.trim()) {
       return res.status(400).json({
         status: false,
-        message: "Profile picture is required and cannot be empty",
-      });
-    }
-    if (normalizedProfilePicture.length > 15) {
-      return res.status(400).json({
-        status: false,
-        message: "Maximum of 15 profile pictures allowed",
+        message: "Profile picture must be a non-empty string (URL or Base64)",
       });
     }
 
@@ -135,7 +124,7 @@ profilerouter.post("/createprofile", async (req, res) => {
       maritalStatus: maritalStatus.trim(),
       interests: interest.map((i) => i.trim()), 
       nationality: nationality.trim(),
-      profilePicture: normalizedProfilePicture,
+      profilePicture: profilePicture.trim(),
       skinColor: skinColor?.trim(),
       eyeColor: eyeColor?.trim(),
     });
