@@ -25,11 +25,7 @@ const profileSchema = new mongoose.Schema(
       // required: true,
     },
 
-    religion:{
-      type: String,
-      required: true,
-    },
-
+ 
     state:{
       type:String,
       required: true

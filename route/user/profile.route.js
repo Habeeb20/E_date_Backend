@@ -23,7 +23,6 @@ profilerouter.post("/createprofile", async (req, res) => {
       userEmail,
       firstName,
 
-      religion,
       lastName,
       state,
       dateOfBirth,
@@ -84,7 +83,7 @@ profilerouter.post("/createprofile", async (req, res) => {
       !firstName ||
       !lastName ||
       !state ||
-      !religion ||
+   
  
       !dateOfBirth ||
       !gender ||
@@ -137,7 +136,7 @@ profilerouter.post("/createprofile", async (req, res) => {
       maritalStatus: maritalStatus.trim(),
       interests: interest.map((i) => i.trim()), 
       nationality: nationality.trim(),
-      religion: religion.trim(),
+    
       bio: bio.trim(),
       profilePicture: normalizedProfilePicture,
       skinColor: skinColor?.trim(),
