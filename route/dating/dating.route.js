@@ -702,21 +702,21 @@ datingRoute.get("/invitation", verifyToken, async(req, res) => {
               message: "Dating profile not found"
             });
           }
-          const pending = userProfile.pendingInvitations.map(user => ({
-            id: user._id,
-            name: `${user.firstName} ${user.lastName}`
-          }));
-          const accepted = userProfile.acceptedInvitations.map(user => ({
-            id: user._id,
-            name: `${user.firstName} ${user.lastName}`
-          }));
+          // const pending = userProfile.pendingInvitations.map(user => ({
+          //   id: user._id,
+          //   name: `${user.firstName} ${user.lastName}`
+          // }));
+          // const accepted = userProfile.acceptedInvitations.map(user => ({
+          //   id: user._id,
+          //   name: `${user.firstName} ${user.lastName}`
+          // }));
 
           return res.status(200).json({
             status: true,
             message: "Invitations retrieved successfully",
             data: {
-              pendingInvitations: pending,
-              acceptedInvitations: accepted
+              pendingInvitations: userProfile.pendingInvitations,
+              acceptedInvitations: userProfile.acceptedInvitations
             }
           });
     } catch (error) {
