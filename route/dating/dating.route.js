@@ -443,7 +443,7 @@ datingRoute.post("/admire", verifyToken, async (req, res) => {
         .populate("profileId", "firstName lastName userEmail") 
         .select("-admirerList -pendingInvitations -acceptedInvitations -chatList"); 
   
-      if (!admirersDatingProfiles.length) {
+      if (admirersDatingProfiles.length === 0 ) {
         return res.status(200).json({
           status: true,
           message: "No users have admired you yet",
