@@ -546,10 +546,25 @@ datingRoute.get("/get_other_admirer", verifyToken, async (req, res) => {
 
 
 //send invitation
-datingRoute.post("/invite/:slug", verifyToken, async(req, res) => {
+datingRoute.post("/invite", verifyToken, async(req, res) => {
     try {
-        const {slug} = req.params;
+        const {slug} = req.body;
         const senderProfileId = req.user.id
+
+        if (!slug || typeof slug !== "string" || slug.trim() === "") {
+          return res.status(400).json({
+            status: false,
+            message: "Slug is required and must be a non-empty string"
+          });
+        }
+        
+        const myprofile = await Profile.findOne({userId: senderProfileId})
+        if(!myprofile) {
+          return res.status(404).json({
+            status: false,
+            message: "your profile is not found"
+          })
+        }
 
         const recipientProfile = await Dating.findOne({slug});
         if(!recipientProfile){
