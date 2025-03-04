@@ -714,7 +714,9 @@ datingRoute.get("/invitation", verifyToken, async(req, res) => {
           return res.status(200).json({
             status: true,
             message: "Invitations retrieved successfully",
+
             data: {
+              userProfile,
               pendingInvitations: userProfile.pendingInvitations,
               acceptedInvitations: userProfile.acceptedInvitations
             }
