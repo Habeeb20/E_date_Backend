@@ -414,9 +414,8 @@ datingRoute.post("/admire", verifyToken, async (req, res) => {
   });
 
 
-  datingRoute.get("/admirers/:slug", verifyToken, async (req, res) => {
+  datingRoute.get("/get_my_admirers", verifyToken, async (req, res) => { 
     try {
-      const { slug } = req.params;
       const userId = req.user.id; 
   
     
@@ -429,38 +428,48 @@ datingRoute.post("/admire", verifyToken, async (req, res) => {
       }
       const profileId = myProfile._id; 
   
-   
-      const authDatingProfile = await Dating.findOne({ profileId, slug });
+
+      const authDatingProfile = await Dating.findOne({ profileId });
       if (!authDatingProfile) {
         return res.status(404).json({
           status: false,
-          message: "Dating profile not found or unauthorized"
+          message: "You have not created a dating profile yet"
         });
       }
   
-
-      const dating = await Dating.findOne({ slug })
-        .populate("admirerList", "firstName lastName") 
-        .exec();
+      const admirersDatingProfiles = await Dating.find({
+        admirerList: profileId 
+      })
+        .populate("profileId", "firstName lastName userEmail") 
+        .select("-admirerList -pendingInvitations -acceptedInvitations -chatList"); 
   
-      if (!dating) {
-        return res.status(404).json({
-          status: false,
-          message: "Dating profile not found"
+      if (!admirersDatingProfiles.length) {
+        return res.status(200).json({
+          status: true,
+          message: "No users have admired you yet",
+          data: {
+            admirersCount: 0,
+            admirers: []
+          }
         });
       }
+  
+      const admirers = admirersDatingProfiles.map(datingProfile => ({
+        id: datingProfile.profileId._id,
+        name: `${datingProfile.profileId.firstName} ${datingProfile.profileId.lastName}`,
+        email: datingProfile.profileId.userEmail,
+        slug: datingProfile.slug,
+        occupation: datingProfile.occupation,
+        hobbies: datingProfile.hobbies,
+        pictures: datingProfile.pictures 
+      }));
   
     
-      const admirers = dating.admirerList.map(admirer => ({
-        id: admirer._id,
-        name: `${admirer.firstName} ${admirer.lastName}`
-      }));
-
       return res.status(200).json({
         status: true,
         message: "Admirers retrieved successfully",
         data: {
-          admirersCount: dating.admirers,
+          admirersCount: admirers.length, 
           admirers: admirers 
         }
       });
@@ -472,7 +481,6 @@ datingRoute.post("/admire", verifyToken, async (req, res) => {
       });
     }
   });
-
 
 //send invitation
 datingRoute.post("/invite/:slug", verifyToken, async(req, res) => {
