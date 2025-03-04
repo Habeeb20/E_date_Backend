@@ -504,7 +504,7 @@ datingRoute.get("/get_other_admirer", verifyToken, async (req, res) => {
     console.log("Authenticated user's Profile ID:", profileId);
 
    
-    const myDating = await Dating.findOne({ profileId }).populate("admirerList", "firstName lastName");
+    const myDating = await Dating.findOne({ profileId }).populate("admirerList", "firstName lastName profilePicture");
     if (!myDating) {
       console.log("Dating profile not found for profileId:", profileId);
       return res.status(404).json({
