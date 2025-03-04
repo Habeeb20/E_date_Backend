@@ -546,66 +546,84 @@ datingRoute.get("/get_other_admirer", verifyToken, async (req, res) => {
 
 
 //send invitation
-datingRoute.post("/invite", verifyToken, async(req, res) => {
-    try {
-        const {slug} = req.body;
-        const senderProfileId = req.user.id
+datingRoute.post("/invite", verifyToken, async (req, res) => {
+  try {
+    const { slug } = req.body;
+    const senderUserId = req.user.id; // Use User._id initially
 
-        if (!slug || typeof slug !== "string" || slug.trim() === "") {
-          return res.status(400).json({
-            status: false,
-            message: "Slug is required and must be a non-empty string"
-          });
-        }
-        
-        const myprofile = await Profile.findOne({userId: senderProfileId})
-        if(!myprofile) {
-          return res.status(404).json({
-            status: false,
-            message: "your profile is not found"
-          })
-        }
-
-        const recipientProfile = await Dating.findOne({slug});
-        if(!recipientProfile){
-            return res.status(404).json({
-                status: false,
-        message: "Dating profile not found"
-            })
-        }
-
-        if(recipientProfile.profileId.toString() === senderProfileId){
-            return res.status(400).json({
-                status: false,
-                message: "you cannot send an invitation to yourself"
-            })
-        }
-
-        if(recipientProfile.pendingInvitations.includes(senderProfileId) || 
-        recipientProfile.acceptedInvitations.includes(senderProfileId) ){
-            return res.status(400).json({
-                status: false,
-                message:"Invitation already sent or accepted"
-            })
-        }
-
-        recipientProfile.pendingInvitations.push(senderProfileId);
-        await recipientProfile.save();
-
-        return res.status(200).json({
-           status: true,
-      message: "Invitation sent successfully" 
-        })
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            status: false,
-      message: "Server error occurred",
- error
-        })
-        
+    // Validate slug
+    if (!slug || typeof slug !== "string" || slug.trim() === "") {
+      return res.status(400).json({
+        status: false,
+        message: "Slug is required and must be a non-empty string",
+      });
     }
-})
+
+    // Find the sender's Profile using their User._id
+    const myProfile = await Profile.findOne({ userId: senderUserId });
+    if (!myProfile) {
+      return res.status(404).json({
+        status: false,
+        message: "Your profile is not found",
+      });
+    }
+
+    const senderProfileId = myProfile._id; // Use Profile._id for invitations
+
+    // Find the recipient's Dating profile by slug
+    const recipientProfile = await Dating.findOne({ slug });
+    if (!recipientProfile) {
+      return res.status(404).json({
+        status: false,
+        message: "Dating profile not found",
+      });
+    }
+
+    // Prevent sending an invitation to oneself
+    if (recipientProfile.profileId.toString() === senderProfileId.toString()) {
+      return res.status(400).json({
+        status: false,
+        message: "You cannot send an invitation to yourself",
+      });
+    }
+
+    // Check if invitation already exists (using .equals() for ObjectId)
+    if (
+      recipientProfile.pendingInvitations.some(id => id.equals(senderProfileId)) ||
+      recipientProfile.acceptedInvitations.some(id => id.equals(senderProfileId))
+    ) {
+      return res.status(400).json({
+        status: false,
+        message: "Invitation already sent or accepted",
+      });
+    }
+
+    // Add sender's Profile._id to recipient's pendingInvitations
+    recipientProfile.pendingInvitations.push(senderProfileId);
+    const updatedProfile = await recipientProfile.save();
+
+    console.log("Updated Dating profile with invitation:", updatedProfile);
+
+    return res.status(200).json({
+      status: true,
+      message: "Invitation sent successfully",
+    });
+  } catch (error) {
+    console.error("Error sending invitation:", error);
+    return res.status(500).json({
+      status: false,
+      message: "Server error occurred",
+      error: error.message || "Unknown error",
+    });
+  }
+});
+
+
+
+
+
+
+
 
 
 //accept or reject invitation
@@ -678,59 +696,56 @@ datingRoute.post("/respond-invitation/:slug", verifyToken, async (req, res) => {
     }
   });
 
-datingRoute.get("/invitation", verifyToken, async(req, res) => {
+datingRoute.get("/invitation", verifyToken, async (req, res) => {
     try {
-        const userProfileId = req.user.id;
-
-        const myProfile = await Profile.findOne({userId: userProfileId})
-        if(!myProfile){
-          return res.status(404).json({
-            status: false,
-            message: "user profile not found"
-          })
-        }
-
-        const myprofileId = myProfile._id
-
-        const userProfile = await Dating.findOne({profileId: myprofileId})
+      const userProfileId = req.user.id;
+  
+      const myProfile = await Profile.findOne({ userId: userProfileId });
+      if (!myProfile) {
+        return res.status(404).json({
+          status: false,
+          message: "User profile not found",
+        });
+      }
+  
+      const myProfileId = myProfile._id;
+ 
+      const userProfile = await Dating.findOne({ profileId: myProfileId })
         .populate("pendingInvitations", "firstName lastName")
         .populate("acceptedInvitations", "firstName lastName")
         .exec();
-        if (!userProfile) {
-            return res.status(404).json({
-              status: false,
-              message: "Dating profile not found"
-            });
-          }
-          // const pending = userProfile.pendingInvitations.map(user => ({
-          //   id: user._id,
-          //   name: `${user.firstName} ${user.lastName}`
-          // }));
-          // const accepted = userProfile.acceptedInvitations.map(user => ({
-          //   id: user._id,
-          //   name: `${user.firstName} ${user.lastName}`
-          // }));
+  
+      if (!userProfile) {
+        return res.status(404).json({
+          status: false,
+          message: "Dating profile not found",
+        });
+      }
 
-          return res.status(200).json({
-            status: true,
-            message: "Invitations retrieved successfully",
-
-            data: {
-              userProfile,
-              pendingInvitations: userProfile.pendingInvitations,
-              acceptedInvitations: userProfile.acceptedInvitations
-            }
-          });
+      console.log("Dating profile with invitations:", {
+        profileId: userProfile.profileId,
+        pendingInvitations: userProfile.pendingInvitations,
+        acceptedInvitations: userProfile.acceptedInvitations,
+      });
+  
+      return res.status(200).json({
+        status: true,
+        message: "Invitations retrieved successfully",
+        data: {
+          userProfile,
+          pendingInvitations: userProfile.pendingInvitations || [],
+          acceptedInvitations: userProfile.acceptedInvitations || [],
+        },
+      });
     } catch (error) {
-        console.error("Error retrieving invitations:", error);
-    return res.status(500).json({
-      status: false,
-      message: "Server error occurred",
-      error: error.message
-    });
+      console.error("Error retrieving invitations:", error);
+      return res.status(500).json({
+        status: false,
+        message: "Server error occurred",
+        error: error.message || "Unknown error",
+      });
     }
-})
-
+  });
 
 datingRoute.get("/coversation/:conversationId", verifyToken, async(req, res) => {
     try {
