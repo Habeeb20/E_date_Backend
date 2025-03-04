@@ -696,6 +696,7 @@ datingRoute.post("/respond-invitation/:slug", verifyToken, async (req, res) => {
     }
   });
 
+
 datingRoute.get("/invitation", verifyToken, async (req, res) => {
     try {
       const userProfileId = req.user.id;
@@ -732,7 +733,7 @@ datingRoute.get("/invitation", verifyToken, async (req, res) => {
         status: true,
         message: "Invitations retrieved successfully",
         data: {
-          userProfile,
+      
           pendingInvitations: userProfile.pendingInvitations || [],
           acceptedInvitations: userProfile.acceptedInvitations || [],
         },
