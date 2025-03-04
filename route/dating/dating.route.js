@@ -682,7 +682,17 @@ datingRoute.get("/invitation", verifyToken, async(req, res) => {
     try {
         const userProfileId = req.user.id;
 
-        const userProfile = await Dating.findOne({profileId: userProfileId})
+        const myProfile = await Profile.findOne({userId: userProfileId})
+        if(!myprofile){
+          return res.status(404).json({
+            status: false,
+            message: "user profile not found"
+          })
+        }
+
+        const myprofileId = myprofile._id
+
+        const userProfile = await Dating.findOne({profileId: myprofileId})
         .populate("pendingInvitations", "firstName lastName")
         .populate("acceptedInvitations", "firstName lastName")
         .exec();
