@@ -414,7 +414,9 @@ datingRoute.post("/admire", verifyToken, async (req, res) => {
   });
 
 
-  datingRoute.get("/get_my_admirers", verifyToken, async (req, res) => { 
+
+///get the users that i have admired
+datingRoute.get("/get_my_admirers", verifyToken, async (req, res) => { 
     try {
       const userId = req.user.id; 
   
@@ -481,6 +483,67 @@ datingRoute.post("/admire", verifyToken, async (req, res) => {
       });
     }
   });
+
+
+
+//get the users that admire me
+datingRoute.get("/get_other_admirer", verifyToken, async (req, res) => {
+  const userId = req.user.id; 
+
+  try {
+    
+    const myProfile = await Profile.findOne({ userId });
+    if (!myProfile) {
+      console.log("User profile not found for userId:", userId);
+      return res.status(404).json({
+        status: false,
+        message: "User profile not found"
+      });
+    }
+    const profileId = myProfile._id;
+    console.log("Authenticated user's Profile ID:", profileId);
+
+   
+    const myDating = await Dating.findOne({ profileId }).populate("admirerList", "firstName lastName");
+    if (!myDating) {
+      console.log("Dating profile not found for profileId:", profileId);
+      return res.status(404).json({
+        status: false,
+        message: "Dating profile not found"
+      });
+    }
+    console.log("Authenticated user's Dating profile admirers:", myDating.admirerList);
+
+
+    return res.status(200).json({
+      status: true,
+      message: "Admirers retrieved successfully",
+      data: {
+        admirersCount:  myDating.admirerList.length, 
+        admirers: myDating.admirerList
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching admirers:", error);
+    if (error.name === "CastError" || error.name === "ValidationError") {
+      return res.status(400).json({
+        status: false,
+        message: "Invalid data format",
+        error: error.message
+      });
+    }
+    return res.status(500).json({
+      status: false,
+      message: "Server error occurred"
+    });
+  }
+});
+
+
+
+
+
+
 
 //send invitation
 datingRoute.post("/invite/:slug", verifyToken, async(req, res) => {
