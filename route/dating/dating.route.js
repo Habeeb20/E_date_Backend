@@ -245,7 +245,7 @@ datingRoute.get("/dating_dashboard", verifyToken, async (req, res) => {
   
    
       const datingData = await Dating.find({
-        profileId: { $ne: authProfileId, $nin: admirerProfileIds } 
+        profileId: { $ne: authProfileId } 
       })
         .populate("profileId", "userEmail firstName lastName") 
         .select("-admirerList -pendingInvitations -acceptedInvitations -chatList"); 
