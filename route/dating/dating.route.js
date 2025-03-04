@@ -690,7 +690,7 @@ datingRoute.get("/invitation", verifyToken, async(req, res) => {
           })
         }
 
-        const myprofileId = myprofile._id
+        const myprofileId = myProfile._id
 
         const userProfile = await Dating.findOne({profileId: myprofileId})
         .populate("pendingInvitations", "firstName lastName")
