@@ -683,7 +683,7 @@ datingRoute.get("/invitation", verifyToken, async(req, res) => {
         const userProfileId = req.user.id;
 
         const myProfile = await Profile.findOne({userId: userProfileId})
-        if(!myprofile){
+        if(!myProfile){
           return res.status(404).json({
             status: false,
             message: "user profile not found"
