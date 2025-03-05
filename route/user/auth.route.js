@@ -57,14 +57,14 @@ authRouter.post("/register", async (req, res) => {
     ) {
       return res
         .status(400)
-        .json({ status: false, error: "All fields are required" });
+        .json({ status: false, message: "All fields are required" });
     }
 
     const existingEmail = await Auth.findOne({ email });
     if (existingEmail) {
       return res
         .status(400)
-        .json({ status: false, error: "Email already exists" });
+        .json({ status: false, message: "Email already exists" });
     }
 
     if (confirmPassword !== password) {
@@ -72,7 +72,7 @@ authRouter.post("/register", async (req, res) => {
         .status(400)
         .json({
           status: false,
-          error: "Confirm password does not match password",
+          message: "Confirm password does not match password",
         });
     }
 
@@ -100,6 +100,7 @@ authRouter.post("/register", async (req, res) => {
     const response = await sendOTPEmail(user.email, verificationToken);
 
     if (!response) {
+      console.log("email is not sent")
       return res
         .status(400)
         .json({ status: false, message: "email is not sent" });

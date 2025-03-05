@@ -697,11 +697,12 @@ datingRoute.post("/respond-invitation/:slug", verifyToken, async (req, res) => {
   });
 
 
-datingRoute.get("/invitation", verifyToken, async (req, res) => {
+  datingRoute.get("/invitation", verifyToken, async (req, res) => {
     try {
-      const userProfileId = req.user.id;
+      const userId = req.user.id;
   
-      const myProfile = await Profile.findOne({ userId: userProfileId });
+  
+      const myProfile = await Profile.findOne({ userId });
       if (!myProfile) {
         return res.status(404).json({
           status: false,
@@ -710,10 +711,26 @@ datingRoute.get("/invitation", verifyToken, async (req, res) => {
       }
   
       const myProfileId = myProfile._id;
- 
+      console.log("Your Profile ID:", myProfileId);
+
+      const rawDatingProfile = await Dating.findOne({ profileId: myProfileId });
+      if (!rawDatingProfile) {
+        return res.status(404).json({
+          status: false,
+          message: "Dating profile not found",
+        });
+      }
+  
+      console.log("Raw Dating profile before population:", {
+        profileId: rawDatingProfile.profileId,
+        pendingInvitations: rawDatingProfile.pendingInvitations,
+        acceptedInvitations: rawDatingProfile.acceptedInvitations,
+      });
+  
+    
       const userProfile = await Dating.findOne({ profileId: myProfileId })
-        .populate("pendingInvitations", "firstName lastName")
-        .populate("acceptedInvitations", "firstName lastName")
+        .populate("pendingInvitations", "firstName lastName _id profilePicture")
+        .populate("acceptedInvitations", "firstName lastName _id profilePicture")
         .exec();
   
       if (!userProfile) {
@@ -722,8 +739,9 @@ datingRoute.get("/invitation", verifyToken, async (req, res) => {
           message: "Dating profile not found",
         });
       }
-
-      console.log("Dating profile with invitations:", {
+  
+      console.log("Dating profile with invitations (after population):", {
+     
         profileId: userProfile.profileId,
         pendingInvitations: userProfile.pendingInvitations,
         acceptedInvitations: userProfile.acceptedInvitations,
@@ -733,7 +751,6 @@ datingRoute.get("/invitation", verifyToken, async (req, res) => {
         status: true,
         message: "Invitations retrieved successfully",
         data: {
-      
           pendingInvitations: userProfile.pendingInvitations || [],
           acceptedInvitations: userProfile.acceptedInvitations || [],
         },
@@ -747,6 +764,7 @@ datingRoute.get("/invitation", verifyToken, async (req, res) => {
       });
     }
   });
+
 
 datingRoute.get("/coversation/:conversationId", verifyToken, async(req, res) => {
     try {

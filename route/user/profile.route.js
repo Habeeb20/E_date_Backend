@@ -82,13 +82,11 @@ profilerouter.post("/createprofile", async (req, res) => {
       !firstName ||
       !lastName ||
       !state ||
-   
- 
       !dateOfBirth ||
       !gender ||
       !maritalStatus ||
-      !nationality ||
-      !profilePicture
+      !nationality 
+   
     ) {
       return res.status(400).json({
         status: false,
