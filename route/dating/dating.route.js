@@ -630,9 +630,9 @@ datingRoute.post("/invite", verifyToken, async (req, res) => {
 
 datingRoute.post("/respond-invitation", verifyToken, async (req, res) => {
     try {
-     
-      const userProfileId = req.user.id;
-      const { senderProfileId, action } = req.body;
+ 
+      const id = req.user.id;
+     const { senderProfileId, action } = req.body;
   
       if (!["accept", "reject"].includes(action)) {
         return res.status(400).json({
@@ -640,7 +640,17 @@ datingRoute.post("/respond-invitation", verifyToken, async (req, res) => {
           message: "Action must be 'accept' or 'reject'"
         });
       }
-  
+
+      const user = await Profile.findOne({userId: id})
+      if(!user) {
+        return res.status(400).json({
+          status: false,
+          message:" profile not found"
+        })
+      }
+      const userProfileId = user._id
+
+      
       const userProfile = await Dating.findOne({ profileId: userProfileId });
       if (!userProfile ) {
         return res.status(404).json({
