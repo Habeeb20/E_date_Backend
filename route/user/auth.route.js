@@ -187,6 +187,7 @@ authRouter.post("/login", async (req, res) => {
         : "Login successful, but no dating profile created yet",
       data: {
         user: {
+          userId: user._id,
           email: user.email,
           phoneNumber: user.phoneNumber,
           countryNumber: user.countryNumber,
