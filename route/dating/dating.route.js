@@ -650,14 +650,14 @@ datingRoute.post("/respond-invitation", verifyToken, async (req, res) => {
       }
       const userProfileId = user._id
 
-      
+
       const userProfile = await Dating.findOne({ profileId: userProfileId });
-      if (!userProfile ) {
-        return res.status(404).json({
-          status: false,
-          message: "Dating profile not found or unauthorized"
-        });
-      }
+      // if (!userProfile ) {
+      //   return res.status(404).json({
+      //     status: false,
+      //     message: "Dating profile not found or unauthorized"
+      //   });
+      // }
   
       const invitationIndex = userProfile.pendingInvitations.indexOf(senderProfileId);
       if (invitationIndex === -1) {
