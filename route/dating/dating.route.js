@@ -749,7 +749,7 @@ datingRoute.get("/mychatlist", verifyToken, async(req, res) => {
     console.log(error)
     return res.status(500).json({
       status: false,
-      message: "an error occurred from the server"
+      message: "an error occurred from the server", error
     })
   }
 })
