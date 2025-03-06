@@ -628,9 +628,9 @@ datingRoute.post("/invite", verifyToken, async (req, res) => {
 
 //accept or reject invitation
 
-datingRoute.post("/respond-invitation/:slug", verifyToken, async (req, res) => {
+datingRoute.post("/respond-invitation", verifyToken, async (req, res) => {
     try {
-      const { slug } = req.params;
+     
       const userProfileId = req.user.id;
       const { senderProfileId, action } = req.body;
   
@@ -642,7 +642,7 @@ datingRoute.post("/respond-invitation/:slug", verifyToken, async (req, res) => {
       }
   
       const userProfile = await Dating.findOne({ profileId: userProfileId });
-      if (!userProfile || userProfile.slug !== slug) {
+      if (!userProfile ) {
         return res.status(404).json({
           status: false,
           message: "Dating profile not found or unauthorized"
