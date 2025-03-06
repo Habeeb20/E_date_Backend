@@ -707,6 +707,45 @@ datingRoute.post("/respond-invitation", verifyToken, async (req, res) => {
   });
 
 
+datingRoute.get("/mychatlist", verifyToken, async(req, res) => {
+  try {
+    const id = req.user.id;
+    const profile = await Profile.findOne({userId: id})
+    if(!profile) {
+      return res.status(404).json({
+        status: false,
+        message: "no profile found"
+      })
+    }
+
+    const myprofileId = profile._id
+
+    const datingProfile = await Dating.findOne({profileId: myprofileId})
+      .populate({path:"chatList.user", select:"firstName, lastName"})
+      .populate({path:"chatList.conversationId", select:"messages.sender messages.content message.read messages.timestapm"})
+    
+    if(!datingProfile){
+      return res.status(400).json({
+        status: false,
+        message: "dating profile for chat list couldnt be populated"
+      })
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "successfully retrieved"
+    })
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({
+      status: false,
+      message: "an error occurred from the server"
+    })
+  }
+})
+
+
+
   datingRoute.get("/invitation", verifyToken, async (req, res) => {
     try {
       const userId = req.user.id;
