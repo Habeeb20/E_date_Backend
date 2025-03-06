@@ -707,52 +707,65 @@ datingRoute.post("/respond-invitation", verifyToken, async (req, res) => {
   });
 
 
-datingRoute.get("/mychatlist", verifyToken, async(req, res) => {
-  try {
-    const id = req.user.id;
-    const profile = await Profile.findOne({userId: id})
-    if(!profile) {
-      return res.status(404).json({
-        status: false,
-        message: "no profile found"
-      })
-    }
-
-    const myprofileId = profile._id
-
-    const datingProfile = await Dating.findOne({profileId: myprofileId})
-      .populate({path:"chatList.user", select:"firstName, lastName"})
-      .populate({path:"chatList.conversationId", select:"messages.sender messages.content message.read messages.timestamps"})
-    
-    if(!datingProfile){
-      return res.status(400).json({
-        status: false,
-        message: "dating profile for chat list couldnt be populated"
-      })
-    }
-
-    return res.status(200).json({
-      status: true,
-      message: "successfully retrieved",
-      data:{
-        firstName: datingProfile.chatList.user.firstName,
-        lastName: datingProfile.chatList.user.lastName,
-        profilePicture:datingProfile.chatList.user.profilePicture,
-        message: datingProfile.conversationId.messages.content,
-        read: datingProfile.conversationId.messages.read,
-        time: datingProfile.conversationId.messages.timestamps
-
-
+  datingRoute.get("/mychatlist", verifyToken, async (req, res) => {
+    try {
+      const id = req.user.id;
+  
+      // Find the user's profile
+      const profile = await Profile.findOne({ userId: id });
+      if (!profile) {
+        return res.status(404).json({
+          status: false,
+          message: "No profile found",
+        });
       }
-    })
-  } catch (error) {
-    console.log(error)
-    return res.status(500).json({
-      status: false,
-      message: "an error occurred from the server", error
-    })
-  }
-})
+  
+      const myProfileId = profile._id;
+  
+   
+      const datingProfile = await Dating.findOne({ profileId: myProfileId })
+        .populate({
+          path: "chatList.user",
+          select: "firstName lastName profilePicture", 
+        })
+        .populate({
+          path: "chatList.conversationId",
+          select: "messages.sender messages.content messages.read messages.timestamp", // Fixed typos
+        });
+  
+      if (!datingProfile) {
+        return res.status(404).json({
+          status: false,
+          message: "Dating profile for chat list couldn’t be found",
+        });
+      }
+  
+     
+      const chatListData = datingProfile.chatList.map((chat) => ({
+        firstName: chat.user?.firstName || "Unknown",
+        lastName: chat.user?.lastName || "Unknown",
+        profilePicture: chat.user?.profilePicture || null,
+        messages: chat.conversationId?.messages.map((msg) => ({
+          content: msg.content,
+          read: msg.read,
+          time: msg.timestamp,
+        })) || [],
+      }));
+  
+      return res.status(200).json({
+        status: true,
+        message: "Successfully retrieved",
+        data: chatListData,
+      });
+    } catch (error) {
+      console.error("Error in /mychatlist:", error);
+      return res.status(500).json({
+        status: false,
+        message: "An error occurred on the server",
+        error: error.message
+      });
+    }
+  });
 
 
 
