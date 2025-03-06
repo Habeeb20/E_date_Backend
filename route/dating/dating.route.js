@@ -722,7 +722,7 @@ datingRoute.get("/mychatlist", verifyToken, async(req, res) => {
 
     const datingProfile = await Dating.findOne({profileId: myprofileId})
       .populate({path:"chatList.user", select:"firstName, lastName"})
-      .populate({path:"chatList.conversationId", select:"messages.sender messages.content message.read messages.timestapm"})
+      .populate({path:"chatList.conversationId", select:"messages.sender messages.content message.read messages.timestamps"})
     
     if(!datingProfile){
       return res.status(400).json({
@@ -734,7 +734,16 @@ datingRoute.get("/mychatlist", verifyToken, async(req, res) => {
     return res.status(200).json({
       status: true,
       message: "successfully retrieved",
-      datingProfile
+      data:{
+        firstName: datingProfile.chatList.user.firstName,
+        lastName: datingProfile.chatList.user.lastName,
+        profilePicture:datingProfile.chatList.user.profilePicture,
+        message: datingProfile.conversationId.messages.content,
+        read: datingProfile.conversationId.messages.read,
+        time: datingProfile.conversationId.messages.timestamps
+
+
+      }
     })
   } catch (error) {
     console.log(error)
