@@ -733,7 +733,8 @@ datingRoute.get("/mychatlist", verifyToken, async(req, res) => {
 
     return res.status(200).json({
       status: true,
-      message: "successfully retrieved"
+      message: "successfully retrieved",
+      datingProfile
     })
   } catch (error) {
     console.log(error)
