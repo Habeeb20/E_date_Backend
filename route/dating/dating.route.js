@@ -730,7 +730,7 @@ datingRoute.post("/respond-invitation", verifyToken, async (req, res) => {
         })
         .populate({
           path: "chatList.conversationId",
-          select: "messages.sender messages.content messages.read messages.timestamp", // Fixed typos
+          select: "_id messages.sender messages.content messages.read messages.timestamp", // Fixed typos
         });
   
       if (!datingProfile) {
@@ -745,6 +745,8 @@ datingRoute.post("/respond-invitation", verifyToken, async (req, res) => {
         firstName: chat.user?.firstName || "Unknown",
         lastName: chat.user?.lastName || "Unknown",
         profilePicture: chat.user?.profilePicture || null,
+        conversationId: chat.conversationId?._id || null,
+        conversation:chat.conversationId?.participants || null,
         messages: chat.conversationId?.messages.map((msg) => ({
           content: msg.content,
           read: msg.read,
