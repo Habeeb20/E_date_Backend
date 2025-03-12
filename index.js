@@ -12,6 +12,7 @@ import datingRoute from "./route/dating/dating.route.js";
 import { Server } from "socket.io";
 import { createServer } from "http";
 import Conversation from "./models/Dating/conversation.schema.js";
+import coupleRoute from "./route/couples/coupleRoute.js";
 
 dotenv.config();
 
@@ -39,6 +40,7 @@ app.use(cookieParser());
 app.use("/api/v1", authRouter);
 app.use("/api/v1", profilerouter);
 app.use("/api/v1", datingRoute);
+app.use("/api/v1", coupleRoute)
 
 // Socket.IO logic
 io.on("connection", (socket) => {
@@ -68,7 +70,7 @@ io.on("connection", (socket) => {
       const message = { sender: senderId, content, timestamp: new Date() };
       conversation.messages.push(message);
       await conversation.save(); 
-
+      
    
       io.to(conversationId).emit("newMessage", message);
     } catch (error) {
