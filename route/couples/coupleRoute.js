@@ -8,6 +8,8 @@ import { verifyToken } from "../../middleware/verifyToken.js";
 import Post from "../../models/couples/postSchema.js";
 import formidable from "formidable"
 import fs from "fs/promises";
+
+
 const coupleRoute = express.Router()
 
 
@@ -349,7 +351,12 @@ coupleRoute.get("/getOtherPosts", verifyToken, async(req, res) => {
             })
         }
 
-        const posts = await Post.find({})
+        const posts = await Post.find({}).sort({createdAt: -1})
+            .populate("userId", "email")
+            .populate("profileId", "firstName lastName profilePicture")
+            .populate("comments.profileId", "firstName lastName profilePicture")
+            .populate("likes.profileId", "firstName lastName profilePicture")
+            .populate("shares.profileId", "firstName lastName profilePicture");
 
         const currentTime = Date.now();
         const validPosts = posts.filter((post) => {
@@ -433,25 +440,127 @@ coupleRoute.delete("/posts/:id", verifyToken, async(req, res) => {
     }
 })
 
+
+
+// add a comment
+coupleRoute.post("/posts/:postId/comment", verifyToken, async(req, res) => {
+    try {
+        const {content} = req.body;
+        const {postId} = req.params;
+        const userId = req.user.id;
+
+        const profile = await Profile.findOne({userId})
+        if(!profile){
+            return res.status(404).json({status: false, message: "profile not found"})
+        }
+
+        const post = await Post.findById(postId);
+        if(!post){
+            return res.status(404).json({status: false, message: "post not found"})
+        }
+
+        post.comments.push({userId, profileId: profile._id, content})
+        await post.save();
+
+
+        
+    const updatedPost = await Post.findById(postId)
+    .populate("comments.profileId", "firstName lastName profilePicture")
+    .populate("likes.profileId", "firstName lastName profilePicture")
+    .populate("shares.profileId", "firstName lastName profilePicture");
+
+    return res.status(200).json({
+        status: true,
+         message: "commented successfully", 
+         post: updatedPost})
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({status: false, message: "an error occurred from the sever"})
+    }
+})
+
+
+
+coupleRoute.post("/posts/:postId/like", verifyToken, async(req, res) => {
+    try {
+        const {postId} = req.params
+        const userId = req.user.id
+
+        const profile = await Profile.findOne({ userId});
+        if(!profile) {
+            return res.status(404).json({
+                status: false,
+                message: "not profile not found"
+            })
+        }
+
+        const post = await Post.findById(postId);
+        if(!post){
+            return res.status(404).json({
+                status: false,
+                message: "post not found"
+            })
+        }
+
+        const likeIndex = post.likes.findIndex(
+            (like) => like.userId.toString() === userId
+        );
+        if(likeIndex === -1){
+            post.likes.push({userId, profileId: profile._id})
+        }else {
+            post.likes.splice(likeIndex, 1)
+        }
+
+        await post.save()
+        const updatedPost = await Post.findById(postId)
+        .populate("comments.profileId", "firstName lastName profilePicture")
+        .populate("likes.profileId", "firstName lastName profilePicture")
+        .populate("shares.profileId", "firstName lastName profilePicture");
+        return res.status(200).json({
+            status: true,
+            message: likeIndex === -1 ? "Liked" : "Unliked",
+            post: updatedPost,
+          });
+    } catch (error) {
+        console.error("Error toggling like:", error);
+        return res.status(500).json({ status: false, message: "Failed to toggle like" });
+    }
+})
+
+
+
+coupleRoute.post("/posts/:postId/share", verifyToken, async (req, res) => {
+    try {
+        const {postId} = req.params
+        const userId = req.user.id
+
+        const profile = await Profile.findOne({userId})
+        if(!profile){
+            return res.status(404).json({status: false, message: "user account not found"})
+        }
+
+        const post = await Post.findById(postId)
+        if(!post){
+            return res.status(404).json({status: false, message: 'post not found'})
+        
+        }
+
+        post.comments.push({userId, profileId:profile._id})
+        await post.save()
+        const updatedPost = await Post.findById(postId)
+        .populate("comments.profileId", "firstName lastName profilePicture")
+        .populate("likes.profileId", "firstName lastName profilePicture")
+        .populate("shares.profileId", "firstName lastName profilePicture");
+  
+      return res.status(200).json({ status: true, message: "Post shared", post: updatedPost });
+    } catch (error) {
+        console.error("Error sharing post:", error);
+        return res.status(500).json({ status: false, message: "Failed to share post" }); profilePicture
+    }
+})
+
+
 export default coupleRoute
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
