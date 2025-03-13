@@ -13,7 +13,7 @@ import { Server } from "socket.io";
 import { createServer } from "http";
 import Conversation from "./models/Dating/conversation.schema.js";
 import coupleRoute from "./route/couples/coupleRoute.js";
-
+import fileUpload from "express-fileupload"
 dotenv.config();
 
 
@@ -35,7 +35,12 @@ app.use(cors({ origin: "*" }));
 app.use(bodyParser.json());
 app.use(morgan("dev"));
 app.use(cookieParser());
-
+// app.use(fileUpload({
+//   useTempFiles: true,
+//   tempFileDir: "/tmp/",
+//   limits: { fileSize: 50 * 1024 * 1024 }, 
+//   abortOnLimit: true,
+// }))
 
 app.use("/api/v1", authRouter);
 app.use("/api/v1", profilerouter);
