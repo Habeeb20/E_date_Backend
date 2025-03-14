@@ -8,6 +8,7 @@ import { verifyToken } from "../../middleware/verifyToken.js";
 import Post from "../../models/couples/postSchema.js";
 import formidable from "formidable"
 import fs from "fs/promises";
+import CoupleConversation from "../../models/couples/coupleConversation.js";
 
 
 const coupleRoute = express.Router()
@@ -106,6 +107,53 @@ coupleRoute.post("/couples", verifyToken, async (req, res) => {
 });
 
 
+///get all users on couple schema
+
+
+coupleRoute.get("/getallcouple", verifyToken, async(req, res) => {
+    try {
+        const userId = req.user.id
+
+        const profile = await Profile.findOne({userId: userId})
+        if(!profile){
+            return res.status(404).json({
+                message: "your profile is not found",
+                status: false
+            })
+        }
+
+        const myProfileId = profile._id
+
+        const couples = await Couples.find({})
+            .populate("profileId", "firstName lastName profilePicture state dateOfBirth gender maritalStatus, interests, nationality profilePicture skinColor eyeColor")
+            .populate("userId", "email phoneNumber countryNumber")
+
+        if(couples.length === 0){
+            return res.status(404).json({
+                status:"false",
+                message:"No other user found yet"
+            })
+        }
+
+        const couple =  couples.filter((coup) => (
+            coup.userId._id.toString() !== userId
+        ))
+
+        return res.status(200).json({
+            status: true,
+            message:"All users",
+            couple
+        })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            message: "an error occurred from the server",
+            status: false
+        })
+    }
+})
+
+
 coupleRoute.get("/getMycouplesdata", verifyToken, async (req, res) => {
     const id = req.user.id
   try {
@@ -201,98 +249,6 @@ coupleRoute.post("/posts", verifyToken, async(req, res) => {
 })
 
 
-
-
-
-
-// coupleRoute.post("/posts", verifyToken, (req, res) => {
-//     const form = new formidable.IncomingForm({
-//       uploadDir: "./tmp/", // Directory for temporary files
-//       keepExtensions: true, // Preserve file extensions
-//       maxFileSize: 50 * 1024 * 1024, // 50MB limit (adjust as needed)
-//     });
-  
-//     form.parse(req, async (err, fields, files) => {
-//       if (err) {
-//         console.error("Form parsing error:", err);
-//         return res.status(500).json({
-//           status: false,
-//           message: "Failed to parse form data",
-//           error: err.message,
-//         });
-//       }
-  
-//       try {
-//         // Log parsed data for debugging
-//         console.log("Fields:", fields);
-//         console.log("Files:", files);
-  
-//         const { content, isStatus, mediaType } = fields;
-//         const userId = req.user.id;
-  
-//         // Find user profile
-//         const profile = await Profile.findOne({ userId });
-//         if (!profile) {
-//           return res.status(404).json({
-//             status: false,
-//             message: "Profile not found",
-//           });
-//         }
-  
-//         // Find couple profile
-//         const couple = await Couples.findOne({ profileId: profile._id });
-//         if (!couple) {
-//           return res.status(404).json({
-//             status: false,
-//             message: "Couple profile not found",
-//           });
-//         }
-  
-//         // Handle media upload with Cloudinary
-//         let mediaUrl = null;
-//         let mediaTypeValue = mediaType || null;
-//         if (files.media) {
-//           const file = files.media;
-//           console.log("Processing file:", file);
-  
-//           const result = await cloudinary.uploader.upload(file.filepath, {
-//             resource_type: file.mimetype.startsWith("video") ? "video" : "image",
-//           });
-//           mediaUrl = result.secure_url;
-//           mediaTypeValue = file.mimetype.startsWith("video") ? "video" : "image";
-  
-//           // Optional: Clean up temp file after upload
-//           await fs.unlink(file.filepath).catch((err) => console.log("Failed to delete temp file:", err));
-//         } else {
-//           console.log("No media file received");
-//         }
-  
-//         // Create new post
-//         const post = new Post({
-//           content: content || "",
-//           media: mediaUrl,
-//           mediaType: mediaTypeValue,
-//           isStatus: isStatus === "true",
-//           userId,
-//           profileId: profile._id,
-//         });
-//         await post.save();
-  
-//         return res.status(201).json({
-//           status: true,
-//           message: `${isStatus === "true" ? "Status" : "Post"} created successfully`,
-//           post,
-//         });
-//       } catch (error) {
-//         console.error("Error creating post:", error);
-//         return res.status(500).json({
-//           status: false,
-//           message: "Failed to create post",
-//           error: error.message,
-//         });
-//       }
-//     });
-//   });
 
 
 
@@ -556,6 +512,241 @@ coupleRoute.post("/posts/:postId/share", verifyToken, async (req, res) => {
     } catch (error) {
         console.error("Error sharing post:", error);
         return res.status(500).json({ status: false, message: "Failed to share post" }); profilePicture
+    }
+})
+
+
+
+//send requests
+coupleRoute.post("/sendrequest", verifyToken, async(req, res) => {
+    try {
+        const {id} = req.body;  
+        const profileId = req.user.id;
+
+        if(!id || typeof id !== "string" || id.trim() == ""){
+            return res.status(400).json({
+                status: false,
+                message: "id is required and must be a non-empty string"
+            })
+        }
+
+        const myProfile = await Profile.findOne({userId: profileId});
+        if(!myProfile){
+            return res.status(404).json({
+                status: false,
+                message: "your profile is not found"
+            })
+        }
+        const senderProfileId = myProfile._id;
+
+        const recipientProfile = await Couples.findOne({_id: id}) 
+        if(!recipientProfile){
+            return res.status(404).json({
+                status: false,
+                message: "recipient partner profile not found"
+            })
+        }
+
+        if(
+            recipientProfile.pendingInvitations.some(id => id.equals(senderProfileId)) ||
+            recipientProfile.acceptedInvitations.some(id => id.equals(senderProfileId))
+        ){
+            return res.status(400).json({
+                status: false,
+                message: "friend request already sent or accepted"
+            })
+        }
+
+        if(recipientProfile.userId.toString() === profileId){  
+            return res.status(400).json({
+                status:false,
+                message: "you can't send a friend request to yourself"
+            })
+        }
+
+        recipientProfile.pendingInvitations.push(senderProfileId)
+        const updatedProfile = await recipientProfile.save()
+
+        return res.status(200).json({
+            status: true,
+            message: "friend request successfully sent",
+            updatedProfile
+        })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json(
+            {
+                status: false,
+                message: "an error occurred from the server"
+            }
+        )
+    }
+})
+
+//accept friend request
+coupleRoute.post("/acceptfriendrequest", verifyToken, async(req, res) => {
+    try {
+        const id = req.user.id;
+        const {senderProfileId, action} = req.body;
+
+        if(!["accept", "reject"].includes(action)){
+            return res.status(400).json({
+                status: false,
+                message: 'Action must be accept or reject'
+            })
+        }
+
+        const user = await Profile.findOne({userId: id})
+        if(!user){
+            return res.status(404).json({
+                message: "your profile is not found",
+                status: false
+            })
+        }
+
+        const userProfileId = user._id
+
+        const userProfile = await Couples.findOne({profileId: userProfileId})
+
+        const invitationIndex = userProfile.pendingInvitations.indexOf(senderProfileId)
+        if(invitationIndex === -1){
+            return res.status(400).json({
+                status: false,
+                message: "no pending requests from this user"
+            })
+        }
+
+        if(action === "accept"){
+            const conversation =  new CoupleConversation({
+                participants:[userProfileId, senderProfileId]
+            })
+            await conversation.save();
+
+            userProfile.pendingInvitations.splice(invitationIndex, 1);
+            userProfile.acceptedInvitations.push(senderProfileId);
+            userProfile.chatList.push({user: senderProfileId, conversationId: conversation._id})
+
+            const senderProfile = await Couples.findOne({profileId: senderProfileId})
+            if(!senderProfile){
+                return res.status(404).json({
+                    status: false,
+                    message: "sender profile not found"
+                })
+            }
+            senderProfile.chatList.push({user: userProfileId, conversationId: conversation._id})
+            await Promise.all([userProfile.save(), senderProfile.save()])
+            
+        } else if(action === "reject"){
+            userProfile.pendingInvitations.splice(invitationIndex, 1)
+            await userProfile.save()
+        }
+
+
+        return res.status(200).json({
+            status: true,
+            message:"successfully accepted"
+        })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            message: "an error occurred with the server"
+        })
+    }
+})
+
+
+//get all friend requests
+coupleRoute.get("/request", verifyToken, async(req, res) => {
+    try {
+        const userId = req.user.id
+
+        const profile = await Profile.findOne({userId: userId})
+        if(!profile){
+            return res.status(404).json({
+                status: false,
+                message: "profile not found"
+            })
+        }
+
+       const myProfileId = profile._id
+
+       const couple = await Couples.findOne({profileId: myProfileId})
+        .populate("pendingInvitations", "firstName lastName _id profilePicture")
+        .populate("acceptedInvitations", "firstName lastName _id profilePicture")
+        .exec()
+
+        if(!couple){
+            return res.status(404).json({
+                status: false,
+                message: "your couple profile not found"
+            })
+        }
+
+        return res.status(200).json({
+            status: true,
+            message:"your friend requests!!",
+            couple:{
+                pending: couple.pendingInvitations,
+                accepted: couple.acceptedInvitations
+            }
+        })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            message: "an error occurred from the sever",
+            status: false
+        })
+    }
+})
+
+
+///my chat list of friends
+coupleRoute.get("/all friends", verifyToken, async(req, res) => {
+    try {
+        const id = req.user.id
+
+        const profile = await Profile.findOne({userId : id})
+        if(!profile){
+            return res.status(404).json({
+                status: false,
+                message: "no profile found"
+            })
+        }
+
+        const myProfileId = profile._id;
+
+        const coupleProfile =  await Couples.findOne({profileId: myProfileId})
+            .populate("chatList.user", "firstName lastName profilePicture")
+            .populate("chatList.conversationId", "_id messages.sender messages.content" )
+        if(!coupleProfile){
+            return res.status(404).json({
+                message:"your couple profile not found",
+                status: false
+            })
+        }
+
+        const chatListData = coupleProfile.chatList.map((chat) => ({
+            firstName:chat.user?.firstName || "unknown",
+            lastName:chat.user?.lastName || "unknown",
+            profilePicture:chat.user?.profilePicture || null,
+            conversationId: chat.conversationId?._id || null,
+            conversation: chat.conversationId?.participants || null,
+            messages: chat.messages.map((message) => ({
+                sender:message.sender,
+                content: message.content,
+                read:message.read,
+                time:message.timestamp
+            }))
+
+        }))
+
+        return res.status(200).json({
+            status: true,
+            chatListData
+        })
+
+    } catch (error) {
+        
     }
 })
 

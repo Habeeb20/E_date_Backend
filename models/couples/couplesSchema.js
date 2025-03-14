@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-
+import slugify from "slugify";
 const couplesSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -8,7 +8,7 @@ const couplesSchema = new mongoose.Schema({
         unique: true
     },
 
-    profileId: {
+    profileId: { 
         type:mongoose.Schema.Types.ObjectId,
         ref: "Profile",
         required: true,
@@ -92,6 +92,41 @@ const couplesSchema = new mongoose.Schema({
     }
   },
 
+  pendingInvitations:[
+    {
+      type:mongoose.Schema.Types.ObjectId,
+      ref: "Profile"
+    },
+  ],
+
+  acceptedInvitations:[
+    {
+      type:mongoose.Schema.Types.ObjectId,
+      ref: "Profile",
+    },
+  ],
+
+  chatList:[
+    {
+      user: {
+        type:mongoose.Schema.Types.ObjectId,
+        ref: "Profile"
+      },
+    
+
+    conversationId:{
+      type:mongoose.Schema.Types.ObjectId,
+      ref: "coupleConversation"
+    }
+  }
+  ],
+
+  slug: {
+    type: String,
+    unique: true,
+    trim: true,
+  },
+
   createdAt: {
     type: Date,
     default: Date.now
@@ -102,10 +137,22 @@ const couplesSchema = new mongoose.Schema({
   }
 });
 
+couplesSchema.pre("save", function(next) {
+  if (!this.slug) {
+    const uniquePart = `${this.profileId}-${Date.now()}`;
+    this.slug = slugify(`${this.familyBackground.fatherMaidenName}-${uniquePart}`, {
+      lower: true,
+      strict: true,
+    });
+  }
+  next();
+});
+
 
 couplesSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
+
 
 export default mongoose.model('Couples', couplesSchema);
