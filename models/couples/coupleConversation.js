@@ -22,7 +22,7 @@ const coupleConversationSchema = new mongoose.Schema({
             },
             read:{
                 type:Boolean,
-                defsult: false
+                default: false
             },
             timestamp:{
                 type:Date,

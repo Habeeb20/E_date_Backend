@@ -547,8 +547,15 @@ coupleRoute.post("/sendrequest", verifyToken, async(req, res) => {
             })
         }
 
-        if(
-            recipientProfile.pendingInvitations.some(id => id.equals(senderProfileId)) ||
+        const senderCoupleProfile = await Couples.findOne({_id: senderProfileId})
+        if(senderCoupleProfile?.acceptedInvitations.some(id => id.equals(recipientProfile._id))){
+            return res.status(400).json({
+                status: false,
+                message: "you cant send a friend request to who is already your friend"
+            })
+        }
+
+        if( recipientProfile.pendingInvitations.some(id => id.equals(senderProfileId)) ||
             recipientProfile.acceptedInvitations.some(id => id.equals(senderProfileId))
         ){
             return res.status(400).json({
@@ -556,6 +563,10 @@ coupleRoute.post("/sendrequest", verifyToken, async(req, res) => {
                 message: "friend request already sent or accepted"
             })
         }
+
+
+
+        
 
         if(recipientProfile.userId.toString() === profileId){  
             return res.status(400).json({
@@ -671,6 +682,8 @@ coupleRoute.get("/request", verifyToken, async(req, res) => {
        const myProfileId = profile._id
 
        const couple = await Couples.findOne({profileId: myProfileId})
+        .populate("profileId", "firstName lastName profilePicture state dateOfBirth gender maritalStatus, interests, nationality profilePicture skinColor eyeColor")
+        .populate("userId", "email phoneNumber countryNumber")
         .populate("pendingInvitations", "firstName lastName _id profilePicture")
         .populate("acceptedInvitations", "firstName lastName _id profilePicture")
         .exec()
@@ -685,9 +698,13 @@ coupleRoute.get("/request", verifyToken, async(req, res) => {
         return res.status(200).json({
             status: true,
             message:"your friend requests!!",
+           
             couple:{
                 pending: couple.pendingInvitations,
-                accepted: couple.acceptedInvitations
+                accepted: couple.acceptedInvitations,
+                user: couple.userId,
+                profile:couple.profileId
+
             }
         })
     } catch (error) {
@@ -701,7 +718,7 @@ coupleRoute.get("/request", verifyToken, async(req, res) => {
 
 
 ///my chat list of friends
-coupleRoute.get("/all friends", verifyToken, async(req, res) => {
+coupleRoute.get("/allfriends", verifyToken, async(req, res) => {
     try {
         const id = req.user.id
 
@@ -725,13 +742,13 @@ coupleRoute.get("/all friends", verifyToken, async(req, res) => {
             })
         }
 
-        const chatListData = coupleProfile.chatList.map((chat) => ({
+        const chatListData = coupleProfile.chatList?.map((chat) => ({
             firstName:chat.user?.firstName || "unknown",
             lastName:chat.user?.lastName || "unknown",
             profilePicture:chat.user?.profilePicture || null,
             conversationId: chat.conversationId?._id || null,
             conversation: chat.conversationId?.participants || null,
-            messages: chat.messages.map((message) => ({
+            messages: chat.conversationId.messages.map((message) => ({
                 sender:message.sender,
                 content: message.content,
                 read:message.read,
@@ -746,7 +763,11 @@ coupleRoute.get("/all friends", verifyToken, async(req, res) => {
         })
 
     } catch (error) {
-        
+        console.log(error)
+        return res.status(500).json({
+            status: false,
+            message: "an error occurred"
+        })
     }
 })
 

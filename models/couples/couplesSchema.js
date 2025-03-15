@@ -116,7 +116,7 @@ const couplesSchema = new mongoose.Schema({
 
     conversationId:{
       type:mongoose.Schema.Types.ObjectId,
-      ref: "coupleConversation"
+      ref: "CoupleConversation"
     }
   }
   ],
