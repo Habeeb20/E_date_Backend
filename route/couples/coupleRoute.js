@@ -11,6 +11,7 @@ import fs from "fs/promises";
 import CoupleConversation from "../../models/couples/coupleConversation.js";
 
 
+
 const coupleRoute = express.Router()
 
 
@@ -772,7 +773,56 @@ coupleRoute.get("/allfriends", verifyToken, async(req, res) => {
 })
 
 
+
+///retrive chat history
+
+coupleRoute.get("/chat/:conversationId", async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const conversation = await CoupleConversation.findById(conversationId).populate(
+            "messages.sender",
+            "firstName lastName profilePicture"
+        );
+        if (!conversation) {
+            return res.status(404).json({ status: false, message: "Conversation not found" });
+        }
+        res.status(200).json({ status: true, messages: conversation.messages });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ status: false, message: "Server error" });
+    }
+});
+
+
+// routes/userRoutes.js
+coupleRoute.get("/me", verifyToken, async (req, res) => {
+    try {
+        console.log("Decoded req.user:", req.user);
+        const userId = req.user.id
+
+        const profile = await Profile.findOne({userId})
+        if(!profile){
+            return res.status(404).json({
+                status: false,
+                message: "profile not found"
+            })
+        }
+
+        const myprofileId = profile._id
+
+     
+        const user = await Couples.findOne({userId:userId});
+        if (!user) {
+            return res.status(404).json({ status: false, message: "User not found" });
+        }
+        res.status(200).json({ status: true, id: user._id });
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ status: false, message: "Server error" });
+    }
+});
 export default coupleRoute
+
 
 
 

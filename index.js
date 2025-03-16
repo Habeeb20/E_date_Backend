@@ -9,23 +9,21 @@ import bodyParser from "body-parser";
 import authRouter from "./route/user/auth.route.js";
 import profilerouter from "./route/user/profile.route.js";
 import datingRoute from "./route/dating/dating.route.js";
+import http from "http";
 import { Server } from "socket.io";
 import { createServer } from "http";
 import Conversation from "./models/Dating/conversation.schema.js";
 import coupleRoute from "./route/couples/coupleRoute.js";
 import fileUpload from "express-fileupload"
+import { setupSocket } from "./socket.js";
 dotenv.config();
 
 
 connectDb();
 
 const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: "*" 
-  }
-});
+
+
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -47,70 +45,21 @@ app.use("/api/v1", profilerouter);
 app.use("/api/v1", datingRoute);
 app.use("/api/v1", coupleRoute)
 
-// Socket.IO logic
-io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
-
-  // Join
-  socket.on("joinConversation", (conversationId) => {
-    socket.join(conversationId);
-    console.log(`User ${socket.id} joined conversation ${conversationId}`);
-  });
-
-  //typing
-
-  socket.on("typing", ({conversationId}) => {
-    socket.to(conversationId).emit("userTyping", {userId: socket.userId})
-  })
-
-  // Send a message
-  socket.on("sendMessage", async ({ conversationId, senderId, content }) => {
-    try {
-      const conversation = await Conversation.findById(conversationId);
-      if (!conversation || !conversation.participants.includes(senderId)) {
-        socket.emit("error", { message: "Invalid conversation or unauthorized" });
-        return;
-      }
-
-      const message = { sender: senderId, content, timestamp: new Date() };
-      conversation.messages.push(message);
-      await conversation.save(); 
-      
-   
-      io.to(conversationId).emit("newMessage", message);
-    } catch (error) {
-      socket.emit("error", { message: error.message });
-    }
-  });
-
-  socket.on("markAsRead", async ({ conversationId, messageId }) => {
-    const conversation = await Conversation.findById(conversationId);
-    if (conversation && conversation.participants.includes(socket.userId)) {
-      const message = conversation.messages.id(messageId);
-      if (message) {
-        message.read = true;
-        await conversation.save();
-        io.to(conversationId).emit("messageRead", { messageId });
-      }
-    }
-  });
-
-
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-  });
-
-
-});
-
 
 app.get("/", (req, res) => {
   res.json("The API for E-Dates is perfectly working right now...");
 });
 
 
+const server = http.createServer(app);
+
+
+const io = setupSocket(server);
+
+
+
+
 const PORT = process.env.PORT || 2000; 
-httpServer.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
